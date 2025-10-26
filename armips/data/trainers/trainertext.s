@@ -9,12 +9,12 @@
 _0000: // Trainer 0
        // Trainer 2
        // Trainer 3
-       // Trainer 11
+       // Trainer 11 - Hiker Steve, Ruins of Alph
        // Trainer 19
        // Trainer 40
        // Trainer 63
-       // Trainer 87
-       // Trainer 88
+       // Trainer 87 - Pokemon Trainer Ethan, Route 31
+       // Trainer 88 - Pokemon Trainer Kris, Route 31
        // Trainer 105
        // Trainer 106
        // Trainer 107
@@ -3094,6 +3094,21 @@ _1ACC: // Trainer 629
 _1AD0: // Trainer 630
     trainertextentry 630, TEXT_DEFEATED_IN_BATTLE, "Whoa, you’re kickin’!\n"
 
+_1AD4: // Trainer 11
+    trainertextentry  11, TEXT_NOTICE_IN_OVERWORLD, "Woah! I’ve found a rare Pokémon, right\rhere at the Ruins of Alph!\r"
+    trainertextentry  11, TEXT_DEFEATED_IN_BATTLE, "My rare Pokémon lost!\n"
+    trainertextentry  11, TEXT_DEFEATED_IN_OVERWORLD, "The Ruins of Alph host a whole bunch\nof rare Pokémon...\fDid you find any?\n"
+
+_1AE0: // Trainer 87
+    trainertextentry  87, TEXT_LAST_MON_CRITICAL, "This battle isn’t over yet!\n"
+    trainertextentry  87, TEXT_DEFEATED_IN_BATTLE, "Look at that! You are strong!\n"
+    trainertextentry  87, TEXT_PLAYER_LOSES, "Wow! I won!\n"
+
+_1AEC: // Trainer 88
+    trainertextentry  88, TEXT_LAST_MON_CRITICAL, "This battle isn’t over yet!\n"
+    trainertextentry  88, TEXT_DEFEATED_IN_BATTLE, "Wow! You are so strong!\n"
+    trainertextentry  88, TEXT_PLAYER_LOSES, "Wow! I won!\n"
+
 .close
 
 
@@ -3111,7 +3126,7 @@ _1AD0: // Trainer 630
 /* Trainer   8 */ .halfword _0A14
 /* Trainer   9 */ .halfword _0C8C
 /* Trainer  10 */ .halfword _0224
-/* Trainer  11 */ .halfword _0000
+/* Trainer  11 */ .halfword _1AD4
 /* Trainer  12 */ .halfword _1218
 /* Trainer  13 */ .halfword _1230
 /* Trainer  14 */ .halfword _1370
@@ -3187,8 +3202,8 @@ _1AD0: // Trainer 630
 /* Trainer  84 */ .halfword _05A8
 /* Trainer  85 */ .halfword _0C98
 /* Trainer  86 */ .halfword _0C80
-/* Trainer  87 */ .halfword _0000
-/* Trainer  88 */ .halfword _0000
+/* Trainer  87 */ .halfword _1AE0
+/* Trainer  88 */ .halfword _1AEC
 /* Trainer  89 */ .halfword _02A4
 /* Trainer  90 */ .halfword _0CE0
 /* Trainer  91 */ .halfword _0CEC

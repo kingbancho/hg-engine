@@ -3221,7 +3221,7 @@ mondata SPECIES_CHIKORITA, "Chikorita"
     abilities ABILITY_OVERGROW, ABILITY_NONE
     runchance 0
     colorflip BODY_COLOR_GREEN, 0
-    mondexentry SPECIES_CHIKORITA, "A sweet aroma gently wafts from\nthe leaf on its head. It is docile\nand loves to soak up sunrays."
+    mondexentry SPECIES_CHIKORITA, "It loves to bask in the sunlight.\nIt uses the leaf on its head to\nseek out warm places."
     mondexclassification SPECIES_CHIKORITA, "Leaf Pokémon"
     mondexheight SPECIES_CHIKORITA, "2’11”"
     mondexweight SPECIES_CHIKORITA, "14.1 lbs."
@@ -3284,7 +3284,7 @@ mondata SPECIES_CYNDAQUIL, "Cyndaquil"
     abilities ABILITY_BLAZE, ABILITY_NONE
     runchance 0
     colorflip BODY_COLOR_YELLOW, 0
-    mondexentry SPECIES_CYNDAQUIL, "It is timid, and always curls itself\nup in a ball. If attacked, it\nflares up its back for protection."
+    mondexentry SPECIES_CYNDAQUIL, "The fire that spouts from its back\nburns hottest when it is angry.\nThe flaring flames intimidate foes."
     mondexclassification SPECIES_CYNDAQUIL, "Fire Mouse Pokémon"
     mondexheight SPECIES_CYNDAQUIL, "1’08”"
     mondexweight SPECIES_CYNDAQUIL, "17.4 lbs."
@@ -3347,7 +3347,7 @@ mondata SPECIES_TOTODILE, "Totodile"
     abilities ABILITY_TORRENT, ABILITY_NONE
     runchance 0
     colorflip BODY_COLOR_BLUE, 0
-    mondexentry SPECIES_TOTODILE, "Its powerful, well-developed jaws\nare capable of crushing anything.\nEven its Trainer must be careful."
+    mondexentry SPECIES_TOTODILE, "This rough critter chomps at any\nmoving object it sees. Turning your\nback on it is not recommended."
     mondexclassification SPECIES_TOTODILE, "Big Jaw Pokémon"
     mondexheight SPECIES_TOTODILE, "2’00”"
     mondexweight SPECIES_TOTODILE, "20.9 lbs."

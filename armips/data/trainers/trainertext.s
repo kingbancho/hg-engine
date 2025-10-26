@@ -1802,7 +1802,7 @@ _102C: // Trainer 54
 _1038: // Trainer 52
     trainertextentry  52, TEXT_NOTICE_IN_OVERWORLD, "I sway like leaves in the wind...\r"
     trainertextentry  52, TEXT_DEFEATED_IN_BATTLE, "Oh, I’m weak!\n"
-    trainertextentry  52, TEXT_DEFEATED_IN_OVERWORLD, "I tried to copy BELLSPROUT’s gentle\nmovements for battle...\rBut I didn’t train well enough.\n"
+    trainertextentry  52, TEXT_DEFEATED_IN_OVERWORLD, "I tried to copy Bellsprout’s gentle\nmovements for battle...\rBut I didn’t train well enough.\n"
 
 _1044: // Trainer 55
     trainertextentry  55, TEXT_NOTICE_IN_OVERWORLD, "The Elder’s TM lights even\npitch-black darkness.\r"

@@ -535,3 +535,12 @@ arm9 PartyMenu_LearnMoveToSlot 0208254C 3
 #ifdef MART_EXPANSION
 arm9 ScrCmd_MartBuy 02048060 1
 #endif
+
+# **** Iridium: Added hooks to support the portable relearner. ****
+
+# pc anywhere
+0001 ClearOverworldRequestFlags 021E6880 1
+# hook from where y button is checked
+0001 SetOverworldRequestFlags_hook 021E6982 0
+# hook from near beginning of function
+0001 CheckOverworldRequestFlags_hook 021E6AF6 3

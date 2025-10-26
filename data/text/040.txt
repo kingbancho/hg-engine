@@ -77,7 +77,7 @@ There is text engraved in the back\nof the obtained Plate...\r“Two make matter
 There is text engraved in the back\nof the obtained Plate...\r“The Original One breathed alone\nbefore the universe came.”\r
 There is text engraved in the back\nof the obtained Plate...\r“The powers of Plates are shared\namong Pokémon.”\r
 There is text engraved in the back\nof the obtained Plate...\r“The rightful bearer of a Plate\ndraws from the Plate it holds.”\r
-Ball Capsules can’t be used because\nyou don’t have any Seals.\r
+Ball Capsules can’t be used because\nyou don’t have any Stickers.\r
                                          
 Would you like to\nsave your adventure so far?
 There is already a saved file.\nIs it OK to overwrite it?
@@ -110,11 +110,11 @@ Excuse me? You won’t say?\nThat’s too bad...
 Thank you! Will you tell me about\nanything else? {YESNO 0}
 Got it! Thanks!
 Got it! Thanks!\n{STRVAR_1 28, 0, 0}, huh...
-BEFORE BATTLE
-WHEN YOU WIN
-WHEN YOU LOSE
-WHEN YOU’RE #1
-NOT TELLING
+Before Battle
+When You Win
+When You Lose
+When You’re #1
+Not Telling
 
 The repellent’s effect wore off!\nWould you like to use another one?
 You used the {STRVAR_1 8, 1, 0}.

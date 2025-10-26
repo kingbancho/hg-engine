@@ -5,7 +5,7 @@
 Item
 {STRVAR_1 8, 0, 0}
 None
-INFO
+Info
 Dex No.
 {STRVAR_1 52, 0, 0}
 Name
@@ -17,7 +17,7 @@ ID No.
 {STRVAR_1 54, 0, 0}
 Exp. Points
 {STRVAR_1 56, 0, 0}
-To Next Lv.
+To Next Level
 
 {STRVAR_1 55, 0, 0}
 ???
@@ -145,12 +145,12 @@ PP
 {STRVAR_1 51, 0, 0}
 {STRVAR_1 51, 0, 0}
 {ALN_CENTER}Cancel
-POWER
-ACCURACY
-CATEGORY
+Power
+Accuracy
+Category
 {STRVAR_1 52, 0, 0}
 {STRVAR_1 52, 0, 0}
-SWITCH
+Switch
 --
 ---
     

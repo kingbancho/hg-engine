@@ -313,7 +313,7 @@ _0200: // Trainer 719
     trainertextentry 719, TEXT_DEFEATED_IN_BATTLE, "I lost? ...\rI don’t believe it.\nThere must be some mistake...\n"
 
 _020C: // Trainer 29
-    trainertextentry  29, TEXT_NOTICE_IN_OVERWORLD, "Ho ho!\rYou some kind of big shot? We’ll see\fwhat happens if you get pushed around\nup here. Think you’ll stagger and fall?\rPeople here are training night and\nday to become bird Pokémon masters.\rBring it on!\r"
+    trainertextentry  29, TEXT_NOTICE_IN_OVERWORLD, "Ho ho!\rYou some kind of big shot? We’ll see\nwhat happens if you get pushed around\fup here. Think you’ll stagger and fall?\rPeople here are training night and\nday to become bird Pokémon masters.\rBring it on!\r"
     trainertextentry  29, TEXT_DEFEATED_IN_BATTLE, "Gaaah!\n"
     trainertextentry  29, TEXT_DEFEATED_IN_OVERWORLD, "Falkner’s skills are for real!\rDon’t get cocky!"
 
@@ -1805,14 +1805,14 @@ _1038: // Trainer 52
     trainertextentry  52, TEXT_DEFEATED_IN_OVERWORLD, "I tried to copy Bellsprout’s gentle\nmovements for battle...\rBut I didn’t train well enough.\n"
 
 _1044: // Trainer 55
-    trainertextentry  55, TEXT_NOTICE_IN_OVERWORLD, "The Elder’s TM lights even\npitch-black darkness.\r"
-    trainertextentry  55, TEXT_DEFEATED_IN_BATTLE, "It is my head that is bright!\n"
-    trainertextentry  55, TEXT_DEFEATED_IN_OVERWORLD, "Let there be light on your journey.\n"
+    trainertextentry  55, TEXT_NOTICE_IN_OVERWORLD, "The Elder’s device reveals what\nlies hidden from all eyes.\r"
+    trainertextentry  55, TEXT_DEFEATED_IN_BATTLE, "It seems you already walk a path\nof great awareness!\n"
+    trainertextentry  55, TEXT_DEFEATED_IN_OVERWORLD, "Use the Elder’s device well.\nIt senses what eyes alone cannot.\n"
 
 _1050: // Trainer 290
     trainertextentry 290, TEXT_NOTICE_IN_OVERWORLD, "So good of you to come here!\rSprout Tower is a place of training.\nPeople and Pokémon test their bonds\fto build a bright future together.\fI am the final test.\rAllow me to check the ties between\nyou and your Pokémon!"
     trainertextentry 290, TEXT_DEFEATED_IN_BATTLE, "Ah, excellent!\n"
-    trainertextentry 290, TEXT_DEFEATED_IN_OVERWORLD, "You and your Pokémon should have no\nproblem using this move.\rTake this Flash TM.\n"
+    trainertextentry 290, TEXT_DEFEATED_IN_OVERWORLD, "You and your Pokémon should have no\nproblem using this item.\rTake this Dowsing Machine.\n"
 
 _105C: // Trainer 281
     trainertextentry 281, TEXT_NOTICE_IN_OVERWORLD, "I’m practicing my fire breathing in the\nBurned Tower! Don’t try this at home!\r"
@@ -3095,7 +3095,7 @@ _1AD0: // Trainer 630
     trainertextentry 630, TEXT_DEFEATED_IN_BATTLE, "Whoa, you’re kickin’!\n"
 
 _1AD4: // Trainer 11
-    trainertextentry  11, TEXT_NOTICE_IN_OVERWORLD, "Woah! I’ve found a rare Pokémon, right\rhere at the Ruins of Alph!\r"
+    trainertextentry  11, TEXT_NOTICE_IN_OVERWORLD, "Woah! I’ve found a rare Pokémon, right\nhere at the Ruins of Alph!\r"
     trainertextentry  11, TEXT_DEFEATED_IN_BATTLE, "My rare Pokémon lost!\n"
     trainertextentry  11, TEXT_DEFEATED_IN_OVERWORLD, "The Ruins of Alph host a whole bunch\nof rare Pokémon...\fDid you find any?\n"
 

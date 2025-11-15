@@ -2392,7 +2392,7 @@ movedata MOVE_FLASH, "Flash"
     appeal 0x0A
     contesttype CONTEST_BEAUTY
     terminatedata
-    movedescription MOVE_FLASH, "The user flashes a\nlight that cuts the\nfoe’s accuracy.\nIt can also be used\nto illuminate caves."
+    movedescription MOVE_FLASH, "The user flashes an\nincredibly bright\nlight that cuts the\nfoe’s accuracy."
 
 movedata MOVE_PSYWAVE, "Psywave"
     battleeffect MOVE_EFFECT_RANDOM_DAMAGE_1_TO_150_LEVEL

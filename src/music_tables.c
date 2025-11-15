@@ -53,6 +53,7 @@ u16 MainMusicComboTable[][2] =
     [ANIM_MUSIC_COMBO_KIMONO_GIRL] = {0x2D, SEQ_GS_VS_TRAINER},
     [ANIM_MUSIC_COMBO_RED] = {0x2E, SEQ_GS_VS_CHAMP},
     // (***END OF VANILLA ENTRIES***)
+    [ANIM_MUSIC_COMBO_ELDER] = {0x26, SEQ_GS_VS_HOUOU},
 };
 
 // format is one byte for trainer class, then one byte for combo (combo increments by 4 because each combo is four bytes long)
@@ -89,9 +90,10 @@ u8 TrainerClassToMusicCombo[][2] =
     {TRAINERCLASS_ROCKET_BOSS, ANIM_MUSIC_COMBO_GIOVANNI*4},
     {TRAINERCLASS_TEAM_ROCKET, ANIM_MUSIC_COMBO_ROCKET_GRUNTS*4},
     {TRAINERCLASS_TEAM_ROCKET_F, ANIM_MUSIC_COMBO_ROCKET_GRUNTS*4},
-    {TRAINERCLASS_KIMONO_GIRL, ANIM_MUSIC_COMBO_KIMONO_GIRL*4},
+    {TRAINERCLASS_KIMONO_GIRL, ANIM_MUSIC_COMBO_HO_OH*4},
     {TRAINERCLASS_PKMN_TRAINER_RED, ANIM_MUSIC_COMBO_RED*4},
     // (***END OF VANILLA ENTRIES***)
+    {TRAINERCLASS_ELDER, ANIM_MUSIC_COMBO_ELDER*4},
 };
 
 struct MonBattleMusic
@@ -139,6 +141,7 @@ struct TrainerMusic sTrainerEncounterMusicParam[] = // cues which music sequence
     {.class = TRAINERCLASS_ACE_TRAINER_M_GS, .music1 = SEQ_GS_EYE_K_AYASHII, .music2 = SEQ_GS_EYE_K_AYASHII},
     {.class = TRAINERCLASS_ACE_TRAINER_F_GS, .music1 = SEQ_GS_EYE_J_SHOUJO, .music2 = SEQ_GS_EYE_J_SHOUJO},
     {.class = TRAINERCLASS_BIRD_KEEPER_GS, .music1 = SEQ_GS_EYE_J_SHOUNEN, .music2 = SEQ_GS_EYE_J_SHOUNEN},
+    {.class = TRAINERCLASS_BIRD_KEEPER, .music1 = SEQ_GS_EYE_K_SHOUJO, .music2 = SEQ_GS_EYE_K_SHOUJO},
     {.class = TRAINERCLASS_JUGGLER, .music1 = SEQ_GS_EYE_J_AYASHII, .music2 = SEQ_GS_EYE_J_AYASHII},
     {.class = TRAINERCLASS_GENTLEMAN, .music1 = SEQ_GS_EYE_K_AYASHII, .music2 = SEQ_GS_EYE_K_AYASHII},
     {.class = TRAINERCLASS_BEAUTY, .music1 = SEQ_GS_EYE_J_SHOUJO, .music2 = SEQ_GS_EYE_J_SHOUJO},

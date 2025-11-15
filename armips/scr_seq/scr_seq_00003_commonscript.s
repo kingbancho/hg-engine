@@ -86,7 +86,7 @@ scrdef scr_seq_0003_068
 scrdef scr_seq_0003_069
 scrdef scr_seq_0003_070
 scrdef scr_seq_0003_071
-scrdef scr_seq_0003_072_repels
+scrdef scr_seq_0003_072
 scrdef_end
 
 scr_seq_0003_002:
@@ -288,8 +288,6 @@ _03D4:
     end
 
 _03E3:
-    goto_if_set FLAG_NURSE_NOTICED_TRAINER_CARD, _041D
-    setflag FLAG_NURSE_NOTICED_TRAINER_CARD
     npc_msg 4
     buffer_players_name 0
     npc_msg 5
@@ -758,8 +756,6 @@ scr_seq_0003_010:
     lockall
     play_se SEQ_SE_DP_PC_ON
     call _0A18
-    buffer_players_name 0
-    npc_msg 33
     touchscreen_menu_hide
     goto _0A2E
 
@@ -1301,24 +1297,6 @@ scr_seq_0003_022:
     releaseall
     end
 
-scr_seq_0003_072_repels:
-    play_se SEQ_SE_DP_SELECT
-    lockall
-    npc_msg 118
-    yesno VAR_SPECIAL_RESULT
-    compare VAR_SPECIAL_RESULT, 1
-    goto_if_eq scr_seq_0003_072_end
-    QueueNewRepel
-    PlayFanfare SEQ_SE_DP_CARD2
-    buffer_players_name 0
-    buffer_item_name 1, VAR_SPECIAL_RESULT
-    npc_msg 119
-    wait_button_or_walk_away
-scr_seq_0003_072_end:
-    closemsg
-    releaseall
-    end
-
 scr_seq_0003_023:
     play_se SEQ_SE_DP_SELECT
     lockall
@@ -1738,7 +1716,27 @@ scr_seq_0003_064:
     releaseall
     end
 
-
+scr_seq_0003_072:
+    playfanfare SEQ_SE_DP_SELECT
+	lockall 
+	fade_screen 6, 1, 0, RGB_BLACK
+	wait_fade 
+	party_select_ui 
+	getselectedpartyslot VAR_SPECIAL_x8005
+	returnscreen 
+	fade_screen 6, 1, 1, RGB_BLACK
+	wait_fade 
+	getpartypokemonid VAR_SPECIAL_x8005, VAR_SPECIAL_RESULT
+	scrcmd_466 VAR_SPECIAL_RESULT, VAR_SPECIAL_x8005
+	fade_screen 6, 1, 0, RGB_BLACK
+	wait_fade 
+	move_relearner_init VAR_SPECIAL_x8005
+	move_relearner_get_result VAR_SPECIAL_RESULT
+	returnscreen 
+	fade_screen 6, 1, 1, RGB_BLACK
+	wait_fade 
+	releaseall 
+    end 
 
 
 

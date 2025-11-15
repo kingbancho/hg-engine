@@ -4,9 +4,6 @@
 #include "../../include/constants/buttons.h"
 #include "../../include/constants/file.h"
 #include "../../include/constants/species.h"
-#include "../../include/constants/vars_flags.h"
-
-/**** AURORA CRYSTAL: Used for Teleport Gem and Portable PC. ****/
 
 /**
  *  @brief clear overworld request flags
@@ -30,6 +27,7 @@ void ClearOverworldRequestFlags(OVERWORLD_REQUEST_FLAGS *req)
     req->DebugKeyPush = 0;
 
     req->OpenPCCheck  = 0; // new:  check if pc should be opened
+    req->OpenRelearnerCheck  = 0; // new:  check if relearner should be opened
 
     req->Site = 0xFF;
     req->PushSite = 0xFF;
@@ -43,9 +41,13 @@ void ClearOverworldRequestFlags(OVERWORLD_REQUEST_FLAGS *req)
  */
 void SetOverworldRequestFlags(OVERWORLD_REQUEST_FLAGS *req, u16 trg)
 {
-    if (trg & PAD_BUTTON_R) {
+    //if (trg & PAD_BUTTON_R) {
+    //    req->OpenRelearnerCheck = TRUE;
+    //}
+
+     if ((trg & PAD_BUTTON_L) || (trg & PAD_BUTTON_R)) {
         req->OpenPCCheck = TRUE;
-    }
+     }
 }
 
 /**
@@ -55,8 +57,19 @@ void SetOverworldRequestFlags(OVERWORLD_REQUEST_FLAGS *req, u16 trg)
  */
 void CheckOverworldRequestFlags(OVERWORLD_REQUEST_FLAGS *req, FieldSystem *fsys)
 {
-    if (req->OpenPCCheck && CheckScriptFlag(FLAG_PORTA_PC_AVAILABLE)) {
-        SetScriptFlag(0x18F);
-        EventSet_Script(fsys, 2010, NULL);
+    // Don't allow the relearner at all if flag 2567 hasn't been set
+    if (req->OpenRelearnerCheck) 
+    {
+        {
+            EventSet_Script(fsys, 2509, NULL); // set up script
+        }
+    }
+    // Don't allow the PC at all if flag 2565 hasn't been set
+    if (req->OpenPCCheck && CheckScriptFlag(2552)) 
+    {
+        {
+            SetScriptFlag(0x18F);
+            EventSet_Script(fsys, 2010, NULL); // set up script
+        } 
     }
 }

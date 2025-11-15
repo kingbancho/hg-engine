@@ -867,12 +867,12 @@ Aargh!\nAlmost had it!
 Gah!\nIt was so close, too!
 {WAIT 3}Gotcha!\n{STRVAR_1 1, 0, 0} was caught!{WAIT 2}\r
 Would you like to give\n{STRVAR_1 1, 0, 0} a nickname?{YESNO 0}
-{STRVAR_1 1, 0, 0} has been sent to\nsomeone’s PC.
-{STRVAR_1 1, 0, 0} has been sent to\nBill’s PC!
+{STRVAR_1 1, 0, 0} has been sent to\nyour Boxes.
+{STRVAR_1 1, 0, 0} has been sent to\nyour Boxes.
 {STRVAR_1 1, 0, 0}’s data has\nbeen added to the Pokédex.\r
 It is raining.
 A sandstorm is raging.
-There is no room left in the PC!\r
+There is no room left in your Boxes!\r
 {STRVAR_1 1, 0, 0}’s {STRVAR_1 8, 1, 0}\ncured its paralysis!
 The wild {STRVAR_1 1, 0, 0}’s\n{STRVAR_1 8, 1, 0} cured its paralysis!
 The opposing {STRVAR_1 1, 0, 0}’s\n{STRVAR_1 8, 1, 0} cured its paralysis!
@@ -922,19 +922,19 @@ Huh? {STRVAR_1 1, 0, 0}\nstopped evolving!\r
 What will {STRVAR_1 1, 0, 0} do?{YESNO 0}
 What will {STRVAR_1 3, 0, 0} throw?{YESNO 0}
 Communicating. Please stand by...
-FIGHT
-BAG
-POKéMON
-RUN
-CANCEL
-CANCEL
-CANCEL
-BALL
-BAIT
-MUD
+Fight
+Bag
+Pokémon
+Run
+Cancel
+Cancel
+Cancel
+Ball
+Bait
+Mud
 
 
-RUN
+Run
 {STRVAR_1 51, 0, 0}/{STRVAR_1 51, 1, 0}
 PP
 Which move should\nbe forgotten?
@@ -948,7 +948,7 @@ Quit the battle?{YESNO 0}
 {STRVAR_1 13, 0, 0}
 +{STRVAR_1 51, 0, 0}
 {STRVAR_1 52, 0, 0}
-SAFARI BALLS
+Safari Balls
 Left: {STRVAR_1 51, 0, 0}
 
 You beat\n{STRVAR_1 14, 0, 0} {STRVAR_1 3, 1, 0}\fand {STRVAR_1 14, 2, 0} {STRVAR_1 3, 3, 0}!\r
@@ -1172,10 +1172,10 @@ The opposing {STRVAR_1 1, 0, 0} was badly\npoisoned by the {STRVAR_1 8, 1, 0}!
 {STRVAR_1 1, 0, 0} got a burn\nfrom the {STRVAR_1 8, 1, 0}!
 The wild {STRVAR_1 1, 0, 0} got a burn\nfrom the {STRVAR_1 8, 1, 0}!
 The opposing {STRVAR_1 1, 0, 0} got a burn\nfrom the {STRVAR_1 8, 1, 0}!
-{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 1, 0} in someone’s PC!
-{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 1, 0} in Bill’s PC!
-{STRVAR_1 11, 1, 0} in someone’s PC is full.\r{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 2, 0} instead!
-{STRVAR_1 11, 1, 0} in Bill’s PC is full.\r{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 2, 0} instead!
+{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 1, 0}.
+{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 1, 0}.
+{STRVAR_1 11, 1, 0} is full.\r{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 2, 0} instead.
+{STRVAR_1 11, 1, 0} is full.\r{STRVAR_1 1, 0, 0} was transferred to\n{STRVAR_1 11, 2, 0} instead.
 {STRVAR_1 1, 0, 0} wants to learn the\nmove {STRVAR_1 6, 1, 0}.\r
 But {STRVAR_1 1, 0, 0} can’t learn\nmore than four moves.\r
 Make it forget\nanother move?{YESNO 0}
@@ -1258,7 +1258,7 @@ The opposing {STRVAR_1 1, 0, 0}\ncan act faster than normal,\fthanks to its {STR
 {STRVAR_1 1, 0, 0}’s {STRVAR_1 6, 1, 0}\nwore off!
 The wild {STRVAR_1 1, 0, 0}’s\n{STRVAR_1 6, 1, 0} wore off!
 The opposing {STRVAR_1 1, 0, 0}’s\n{STRVAR_1 6, 1, 0} wore off!
-STOP
+Stop
 Playback paused.
 Please wait.
 Data is corrupted.
@@ -1268,7 +1268,7 @@ Playback canceled.
 The dimensions became distorted!
 The Distortion World’s {STRVAR_1 1, 0, 0}\nappeared!\r
 Announcer: You’re out of\n{STRVAR_1 8, 0, 0}s!\fGame over!\r
-BALL
+Ball
 x{STRVAR_1 51, 0, 0}
 ♂
 ♀

@@ -5,7 +5,7 @@
 Item
 {STRVAR_1 8, 0, 0}
 None
-Info
+INFO
 Dex No.
 {STRVAR_1 52, 0, 0}
 Name

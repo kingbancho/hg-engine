@@ -395,7 +395,7 @@ The user stores power, then attacks.\nIf the user can use this attack after\nthe
 The user recycles a single-use item\nthat has been used in battle so it can\nbe used again.
 The user charges the foe using every\nbit of its power. It must rest on the\nnext turn to recover.
 The user polishes its body to reduce\ndrag. It sharply raises the Speed\nstat.
-The user flashes a light that cuts the\nfoe’s accuracy. It can also be used to\nilluminate caves.
+The user emits a sudden bright light\nwhich lowers the target’s accuracy.
 The user stabs the foe with a\nsharpened stone from below. It has\na high critical-hit ratio.
 An attack move that inflicts double\nthe damage if the user has been hurt\nby the foe in the same turn.
 A weak electric charge is launched\nat the foe. It causes paralysis if it\nhits.

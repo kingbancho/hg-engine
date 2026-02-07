@@ -1187,7 +1187,7 @@ Should this Pokémon give up on\nlearning this new move?{YESNO 0}
 {ALN_CENTER}Give up on {STRVAR_1 6, 0, 0}!
 {ALN_CENTER}Don’t give up on {STRVAR_1 6, 0, 0}!
 {STRVAR_1 1, 0, 0} did not learn\n{STRVAR_1 6, 1, 0}.\r
-One...{PAUSE 20}two...{PAUSE 20}and...{PAUSE 20}{WAIT 4}ta-da!\r
+
 {STRVAR_1 1, 0, 0} forgot\n{STRVAR_1 6, 1, 0}.\r
 And...\r
 {STRVAR_1 1, 0, 0} learned\n{STRVAR_1 6, 1, 0}!{WAIT 5}{WAIT 2}\r
@@ -1197,7 +1197,7 @@ Should a move be deleted? {YESNO 0}
 Which move should be forgotten?\r
 Stop trying to teach\n{STRVAR_1 6, 0, 0}? {YESNO 0}
 {STRVAR_1 1, 0, 0} did not learn the\nmove {STRVAR_1 6, 1, 0}.\r
-One...{PAUSE 20}two...{PAUSE 20}and...{PAUSE 20}{WAIT 4}ta-da!\r
+
 {STRVAR_1 1, 0, 0} forgot\n{STRVAR_1 6, 1, 0}.\r
 And...\r
 {STRVAR_1 1, 0, 0} learned\n{STRVAR_1 6, 1, 0}!{WAIT 5}{WAIT 2}\r

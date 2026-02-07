@@ -797,8 +797,8 @@ _0A8C:
     menu_item_add 66, 255, 3
     menu_exec
     switch VAR_SPECIAL_x8006
-    case 0, _0B01
-    case 1, _0C23
+    case 0, _0BC8
+    case 1, _0D3A
     case 2, _0DBA
     goto _0DF0
 
@@ -806,8 +806,8 @@ _0AD1:
     menu_item_add 66, 255, 2
     menu_exec
     switch VAR_SPECIAL_x8006
-    case 0, _0B01
-    case 1, _0C23
+    case 0, _0BC8
+    case 1, _0D3A
     goto _0DF0
 
 _0B01:
@@ -875,10 +875,9 @@ _0BEE:
 _0C01:
     buffer_players_name 0
     non_npc_msg 34
-    call _0B17
     call _0A18
     fade_screen 6, 1, 1, RGB_BLACK
-    goto _0B53
+    goto _0A2E
 
 _0C23:
     play_se SEQ_SE_DP_PC_LOGIN

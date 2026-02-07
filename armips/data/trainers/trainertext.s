@@ -343,7 +343,7 @@ _0250: // Trainer 68
     trainertextentry  68, TEXT_DEFEATED_IN_OVERWORLD, "Just being in this Gym, I feel like I’ve\nturned into a bug Pokémon!\n"
 
 _025C: // Trainer 69
-    trainertextentry  69, TEXT_NOTICE_IN_OVERWORLD, "You saved all the SLOWPOKE?\nWhew, you’re mighty!\rBut my grown-up Pokémon are pretty\ntough, too!\r"
+    trainertextentry  69, TEXT_NOTICE_IN_OVERWORLD, "You saved all the Slowpoke?\nWhew, you’re mighty!\rBut my grown-up Pokémon are pretty\ntough, too!\r"
     trainertextentry  69, TEXT_DEFEATED_IN_BATTLE, "Urrgggh!\n"
     trainertextentry  69, TEXT_DEFEATED_IN_OVERWORLD, "If you move the web with the switch,\nyou’ll be able to figure out where\fthe lift is going.\n"
 
@@ -1891,7 +1891,7 @@ _1108: // Trainer 191
     trainertextentry 191, TEXT_DEFEATED_IN_OVERWORLD, "What?! You made it past our men in\nthe Underground? How could you have?\n"
 
 _1114: // Trainer 706
-    trainertextentry 706, TEXT_NOTICE_IN_OVERWORLD, "Proton: Now, wait just one second!\rAren’t you the one who got in\nour way at the SLOWPOKE Well?\rI see... You’re doing all this because\nyou want to make me angry. Be careful!\rBut since you seem to wish it, I’ll show\nyou the full extent of a Team Rocket\fExecutive’s wrath!\r"
+    trainertextentry 706, TEXT_NOTICE_IN_OVERWORLD, "Proton: Now, wait just one second!\rAren’t you the one who got in\nour way at the Slowpoke Well?\rI see... You’re doing all this because\nyou want to make me angry. Be careful!\rBut since you seem to wish it, I’ll show\nyou the full extent of a Team Rocket\fExecutive’s wrath!\r"
     trainertextentry 706, TEXT_LAST_MON_SENT_OUT, "Seriously, you’d chase me this far?!\n"
     trainertextentry 706, TEXT_LAST_MON_CRITICAL, "Ugh... What are you?!\n"
     trainertextentry 706, TEXT_DEFEATED_IN_BATTLE, "Phew...\n"
@@ -1933,19 +1933,19 @@ _1170: // Trainer 42
     trainertextentry  42, TEXT_DEFEATED_IN_OVERWORLD, "I like thinking here.\n"
 
 _117C: // Trainer 319
-    trainertextentry 319, TEXT_NOTICE_IN_OVERWORLD, "ZUBAT’s Supersonic keeps confusing my\nPokémon. I’m seriously upset\fabout that!\r"
+    trainertextentry 319, TEXT_NOTICE_IN_OVERWORLD, "Zubat’s Supersonic keeps confusing my\nPokémon. I’m seriously upset\fabout that!\r"
     trainertextentry 319, TEXT_DEFEATED_IN_BATTLE, "I flamed out!\n"
     trainertextentry 319, TEXT_DEFEATED_IN_OVERWORLD, "I’ve practiced training my Pokémon,\nbut I’ve practiced breathing fire many\fmore times than that.\rDon’t try this at home, OK?\n"
 
 _1188: // Trainer 390
     trainertextentry 390, TEXT_NOTICE_IN_OVERWORLD, "If there’s light, a cave isn’t scary. If\nyou’re strong, Pokémon aren’t scary.\r"
-    trainertextentry 390, TEXT_DEFEATED_IN_BATTLE, "FLASH!\n"
+    trainertextentry 390, TEXT_DEFEATED_IN_BATTLE, "WRAAAAH!\n"
     trainertextentry 390, TEXT_DEFEATED_IN_OVERWORLD, "It’s my Pokémon’s fire that lights up\nthis cave.\n"
 
 _1194: // Trainer 23
     trainertextentry  23, TEXT_NOTICE_IN_OVERWORLD, "I roam far and wide in search of\nPokémon.\rAre you looking for Pokémon, too?\nThen you’re my collecting rival!\r"
     trainertextentry  23, TEXT_DEFEATED_IN_BATTLE, "Ugh. My poor Pokémon...\n"
-    trainertextentry  23, TEXT_DEFEATED_IN_OVERWORLD, "Every Friday, you can hear Pokémon\nroars from deep inside the cave.\n"
+    trainertextentry  23, TEXT_DEFEATED_IN_OVERWORLD, "If you listen closely, you can hear Pokémon\nroars from deep inside the cave.\fIt’s almost as if a Pokémon’s singing...\n"
 
 _11A0: // Trainer 25
     trainertextentry  25, TEXT_NOTICE_IN_OVERWORLD, "You’re headed to Azalea, are you?\nLet my Pokémon see if you are good\fenough to battle.\r"
@@ -1955,7 +1955,7 @@ _11A0: // Trainer 25
 _11AC: // Trainer 384
     trainertextentry 384, TEXT_NOTICE_IN_OVERWORLD, "Whoa! What a surprise!\nI didn’t expect to see anyone here!\r"
     trainertextentry 384, TEXT_DEFEATED_IN_BATTLE, "Whoa! I’m beaten big time!\n"
-    trainertextentry 384, TEXT_DEFEATED_IN_OVERWORLD, "I was conned into buying a\nSlowpokeTail. I feel sorry for the\fpoor Pokémon.\n"
+    trainertextentry 384, TEXT_DEFEATED_IN_OVERWORLD, "I was conned into buying a\nSlowpoke Tail. I feel sorry for the\fpoor Pokémon.\n"
 
 _11B8: // Trainer 201
     trainertextentry 201, TEXT_NOTICE_IN_OVERWORLD, "Who’s there?\nLeave me and my Pokémon alone!\r"
@@ -1998,19 +1998,19 @@ _120C: // Trainer 486
     trainertextentry 486, TEXT_DEFEATED_IN_BATTLE, "Grr...\nFor a kid to be this good...\fI didn’t see it coming.\n"
 
 _1218: // Trainer 12
-    trainertextentry  12, TEXT_NOTICE_IN_OVERWORLD, "Quit taking SlowpokeTails?\rIf we listened to you, Team Rocket’s\nrep would be ruined!\r"
+    trainertextentry  12, TEXT_NOTICE_IN_OVERWORLD, "Quit taking Slowpoke Tails?\rIf we listened to you, Team Rocket’s\nrep would be ruined!\r"
     trainertextentry  12, TEXT_DEFEATED_IN_BATTLE, "Just...\nToo strong...\n"
-    trainertextentry  12, TEXT_DEFEATED_IN_OVERWORLD, "We need the money, but selling\nSlowpokeTails?\rIt’s tough being a Team Rocket Grunt!\n"
+    trainertextentry  12, TEXT_DEFEATED_IN_OVERWORLD, "We need the money, but selling\nSlowpoke Tails?\rIt’s tough being a Team Rocket Grunt!\n"
 
 _1224: // Trainer 101
     trainertextentry 101, TEXT_NOTICE_IN_OVERWORLD, "Humph! I was standing guard up top\nwhen some old coot yelled at me.\rHe startled me so much that I fell\ndown here.\rHow about I vent my anger and take it\nout on you!\r"
     trainertextentry 101, TEXT_DEFEATED_IN_BATTLE, "Arrgh! This is NOT my day!\n"
-    trainertextentry 101, TEXT_DEFEATED_IN_OVERWORLD, "Sure, we’ve been hacking the tails off\nSLOWPOKE and selling them.\rTeam Rocket will do anything for money!\n"
+    trainertextentry 101, TEXT_DEFEATED_IN_OVERWORLD, "Sure, we’ve been hacking the tails off\nSlowpoke and selling them.\rTeam Rocket will do anything for money!\n"
 
 _1230: // Trainer 13
-    trainertextentry  13, TEXT_NOTICE_IN_OVERWORLD, "Stop taking SlowpokeTails?\rWhat?! You want us to disobey a direct\norder from Executive Proton?\rIf you want to stop us, you’ll have to\ndefeat us all! Go ahead and try!\r"
+    trainertextentry  13, TEXT_NOTICE_IN_OVERWORLD, "Stop taking Slowpoke Tails?\rWhat?! You want us to disobey a direct\norder from Executive Proton?\rIf you want to stop us, you’ll have to\ndefeat us all! Go ahead and try!\r"
     trainertextentry  13, TEXT_DEFEATED_IN_BATTLE, "You rotten brat!\n"
-    trainertextentry  13, TEXT_DEFEATED_IN_OVERWORLD, "SlowpokeTails grow back fast!\rBesides, it was an order from Proton,\nso I’m more concerned about that!\n"
+    trainertextentry  13, TEXT_DEFEATED_IN_OVERWORLD, "Slowpoke Tails grow back fast!\rBesides, it was an order from Proton,\nso I’m more concerned about that!\n"
 
 _123C: // Trainer 73
     trainertextentry  73, TEXT_NOTICE_IN_OVERWORLD, "What are you here for? Just to stand\naround and gawk? I suggest you leave!\r"
@@ -2596,12 +2596,12 @@ _17CC: // Trainer 600
 _17D8: // Trainer 539
     trainertextentry 539, TEXT_NOTICE_IN_OVERWORLD, "Hey! Hugh!\r"
     trainertextentry 539, TEXT_DEFEATED_IN_BATTLE, "I mistook you for someone else...\n"
-    trainertextentry 539, TEXT_DEFEATED_IN_OVERWORLD, "I came to explore Mt. Mortar, but I got\nseparated from my partner...\rDid you run into a Trainer who uses a\nSEADRA? That SEADRA is really good at\fusing Waterfall.\n"
+    trainertextentry 539, TEXT_DEFEATED_IN_OVERWORLD, "I came to explore Mt. Mortar, but I got\nseparated from my partner...\rDid you run into a Trainer who uses a\nSEADRA? That Seadra is really good at\fusing Waterfall.\n"
 
 _17E4: // Trainer 538
     trainertextentry 538, TEXT_NOTICE_IN_OVERWORLD, "Yo! Markus!\r"
     trainertextentry 538, TEXT_DEFEATED_IN_BATTLE, "Oops!\nI really mixed you up!\n"
-    trainertextentry 538, TEXT_DEFEATED_IN_OVERWORLD, "I came to explore Mt. Mortar, but I got\nseparated from my partner...\rDid you run into a Trainer who uses a\nSLOWPOKE? That SLOWPOKE is really good\fat using Strength.\n"
+    trainertextentry 538, TEXT_DEFEATED_IN_OVERWORLD, "I came to explore Mt. Mortar, but I got\nseparated from my partner...\rDid you run into a Trainer who uses a\nSlowpoke? That Slowpoke is really good\fat using Strength.\n"
 
 _17F0: // Trainer 537
     trainertextentry 537, TEXT_NOTICE_IN_OVERWORLD, "I’m not losing this time!\r"

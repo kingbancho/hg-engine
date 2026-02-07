@@ -531,7 +531,7 @@ trainerdata 17, "Kenji"
 trainerdata 18, "Justin"
     trainermontype TRAINER_DATA_TYPE_NOTHING
     trainerclass TRAINERCLASS_FISHERMAN
-    nummons 4
+    nummons 3
     item ITEM_NONE
     item ITEM_NONE
     item ITEM_NONE
@@ -551,7 +551,7 @@ trainerdata 18, "Justin"
         // mon 1
         ivs 0
         abilityslot 0
-        level 5
+        level 10
         pokemon SPECIES_MAGIKARP
         ballseal 0
 
@@ -559,13 +559,6 @@ trainerdata 18, "Justin"
         ivs 0
         abilityslot 0
         level 15
-        pokemon SPECIES_MAGIKARP
-        ballseal 0
-
-        // mon 3
-        ivs 0
-        abilityslot 0
-        level 5
         pokemon SPECIES_MAGIKARP
         ballseal 0
     endparty
@@ -625,7 +618,7 @@ trainerdata 20, "Falkner"
         pokemon SPECIES_PIDGEY
         item ITEM_NONE
         move MOVE_ROOST
-        move MOVE_SAND_ATTACK
+        move MOVE_MUD_SLAP
         move MOVE_GUST
         move MOVE_QUICK_ATTACK
         ballseal 10
@@ -639,7 +632,7 @@ trainerdata 20, "Falkner"
         move MOVE_ROOST
         move MOVE_CONFUSION
         move MOVE_PECK
-        move MOVE_SUPERSONIC
+        move MOVE_MUD_SLAP
         ballseal 15
 
         // mon 1
@@ -651,7 +644,7 @@ trainerdata 20, "Falkner"
         move MOVE_CONFUSION
         move MOVE_ROOST
         move MOVE_PECK
-        move MOVE_SUPERSONIC
+        move MOVE_MUD_SLAP
         ballseal 20
     endparty
 
@@ -823,7 +816,7 @@ trainerdata 26, "Roland"
         // mon 0
         ivs 0
         abilityslot 32
-        level 9
+        level 10
         pokemon SPECIES_NIDORAN_M
         ballseal 0
     endparty
@@ -844,7 +837,7 @@ trainerdata 27, "Liz"
         // mon 0
         ivs 0
         abilityslot 32
-        level 8
+        level 10
         pokemon SPECIES_NIDORAN_F
         ballseal 0
     endparty
@@ -920,7 +913,7 @@ trainerdata 29, "Rod"
         ivs 30
         abilityslot 0
         level 9
-        monwithform SPECIES_SQUAWKABILLY, 1
+        pokemon SPECIES_DODUO
         ballseal 0
     endparty
 
@@ -1592,15 +1585,15 @@ trainerdata 49, "Albert"
         // mon 0
         ivs 0
         abilityslot 0
-        level 6
-        pokemon SPECIES_RATTATA
+        level 9
+        pokemon SPECIES_MANKEY
         ballseal 0
 
         // mon 1
         ivs 0
         abilityslot 0
-        level 8
-        pokemon SPECIES_ZUBAT
+        level 9
+        pokemon SPECIES_MAREEP
         ballseal 0
     endparty
 
@@ -1684,7 +1677,7 @@ trainerdata 52, "Edmond"
         ivs 0
         abilityslot 0
         level 6
-        pokemon SPECIES_MEDITITE
+        pokemon SPECIES_GASTLY
         ballseal 0
     endparty
 
@@ -1712,7 +1705,7 @@ trainerdata 53, "Jin"
         ivs 0
         abilityslot 0
         level 6
-        pokemon SPECIES_GASTLY
+        pokemon SPECIES_CHINGLING
         ballseal 0
     endparty
 
@@ -1761,7 +1754,7 @@ trainerdata 55, "Neal"
 trainerdata 56, "Gordon"
     trainermontype TRAINER_DATA_TYPE_NOTHING
     trainerclass TRAINERCLASS_YOUNGSTER
-    nummons 1
+    nummons 2
     item ITEM_NONE
     item ITEM_NONE
     item ITEM_NONE
@@ -1774,15 +1767,22 @@ trainerdata 56, "Gordon"
         // mon 0
         ivs 0
         abilityslot 32
-        level 10
+        level 9
         pokemon SPECIES_WOOPER
+        ballseal 0
+
+        // mon 1
+        ivs 0
+        abilityslot 32
+        level 9
+        monwithform SPECIES_AZURILL
         ballseal 0
     endparty
 
 trainerdata 57, "Ralph"
     trainermontype TRAINER_DATA_TYPE_NOTHING
     trainerclass TRAINERCLASS_FISHERMAN
-    nummons 1
+    nummons 2
     item ITEM_NONE
     item ITEM_NONE
     item ITEM_NONE
@@ -1796,7 +1796,14 @@ trainerdata 57, "Ralph"
         ivs 0
         abilityslot 0
         level 10
-        pokemon SPECIES_GOLDEEN
+        pokemon SPECIES_POLIWAG
+        ballseal 0
+
+        // mon 1
+        ivs 0
+        abilityslot 0
+        level 10
+        pokemon SPECIES_CHINCHOU
         ballseal 0
     endparty
 
@@ -1872,15 +1879,15 @@ trainerdata 60, "Henry"
         // mon 0
         ivs 0
         abilityslot 0
-        level 8
-        pokemon SPECIES_POLIWAG
+        level 10
+        pokemon SPECIES_GOLDEEN
         ballseal 0
 
         // mon 1
         ivs 0
         abilityslot 32
-        level 8
-        pokemon SPECIES_POLIWAG
+        level 10
+        pokemon SPECIES_TENTACOOL
         ballseal 0
     endparty
 
@@ -1900,15 +1907,15 @@ trainerdata 61, "Anthony"
         // mon 0
         ivs 0
         abilityslot 0
-        level 11
+        level 14
         pokemon SPECIES_GEODUDE
         ballseal 0
 
         // mon 1
         ivs 0
         abilityslot 32
-        level 11
-        pokemon SPECIES_MACHOP
+        level 14
+        pokemon SPECIES_BONSLY
         ballseal 0
     endparty
 
@@ -9965,21 +9972,21 @@ trainerdata 290, "Li"
         // mon 0
         ivs 0
         abilityslot 0
-        level 8
+        level 9
         pokemon SPECIES_NATU
         ballseal 0
 
         // mon 1
         ivs 0
         abilityslot 0
-        level 8
-        pokemon SPECIES_CHINGLING
+        level 9
+        pokemon SPECIES_MEDITITE
         ballseal 0
 
         // mon 2
         ivs 0
         abilityslot 0
-        level 9
+        level 10
         pokemon SPECIES_BELLSPROUT
         ballseal 0
     endparty
@@ -12871,21 +12878,21 @@ trainerdata 383, "Peter"
         // mon 0
         ivs 50
         abilityslot 0
-        level 6
+        level 10
         pokemon SPECIES_PIDGEY
         ballseal 0
 
         // mon 1
         ivs 50
         abilityslot 32
-        level 6
-        pokemon SPECIES_PIDGEY
+        level 10
+        pokemon SPECIES_WINGULL
         ballseal 0
 
         // mon 2
         ivs 50
         abilityslot 0
-        level 8
+        level 10
         pokemon SPECIES_SPEAROW
         ballseal 0
     endparty
@@ -13072,7 +13079,7 @@ trainerdata 390, "Ray"
         // mon 0
         ivs 0
         abilityslot 0
-        level 9
+        level 13
         pokemon SPECIES_VULPIX
         ballseal 0
     endparty

@@ -13,7 +13,7 @@
 
 /* Double HP Bar speed */
 .org 0x022378C0 + 0x2DF32
-.byte 0x2
+.byte 0x8
 
 /* Double EXP bar speed */
 .org 0x022378C0 + 0x2DF5C

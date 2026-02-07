@@ -8,7 +8,7 @@
 .open "base/arm9.bin", 0x02000000
 
 .org 0x02000000 + 0xFA558 //New Bark Town
-.halfword ITEM_POTION
+.halfword ITEM_POKE_BALL
 
 .org 0x02000000 + 0xFA560 //Cherrygrove
 .halfword ITEM_NUGGET
@@ -17,10 +17,10 @@
 .halfword ITEM_NUGGET
 
 .org 0x02000000 + 0xFA570 //R30
-.halfword ITEM_POTION
+.halfword ITEM_FULL_HEAL
 
 .org 0x02000000 + 0xFA578 //Dark Cave
-.halfword ITEM_POKE_BALL
+.halfword ITEM_GREAT_BALL
 
 .org 0x02000000 + 0xFA580 //Dark Cave
 .halfword ITEM_MAX_ETHER
@@ -38,7 +38,7 @@
 .halfword ITEM_HYPER_POTION
 
 .org 0x02000000 + 0xFA5A8 //Violet
-.halfword ITEM_POKE_BALL
+.halfword ITEM_GREAT_BALL
 
 .org 0x02000000 + 0xFA5B0 //Ruins of Alph E
 .halfword ITEM_GREAT_BALL
@@ -59,7 +59,7 @@
 .halfword ITEM_GREAT_BALL
 
 .org 0x02000000 + 0xFA5E0 //Union Cave 1F S
-.halfword ITEM_PARALYZE_HEAL
+.halfword ITEM_FULL_HEAL
 
 .org 0x02000000 + 0xFA5E8 //Union Cave 1F W
 .halfword ITEM_BIG_PEARL

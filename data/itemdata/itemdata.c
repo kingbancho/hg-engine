@@ -143,7 +143,7 @@ const ITEMDATA __data[] =
 
 [ITEM_ULTRA_BALL] =
 {
-    .price = 800,
+    .price = 600,
     .holdEffect = 0,
     .holdEffectParam = 0,
     .pluckEffect = 0,
@@ -208,7 +208,7 @@ const ITEMDATA __data[] =
 
 [ITEM_GREAT_BALL] =
 {
-    .price = 600,
+    .price = 300,
     .holdEffect = 0,
     .holdEffectParam = 0,
     .pluckEffect = 0,
@@ -273,7 +273,7 @@ const ITEMDATA __data[] =
 
 [ITEM_POKE_BALL] =
 {
-    .price = 200,
+    .price = 100,
     .holdEffect = 0,
     .holdEffectParam = 0,
     .pluckEffect = 0,
@@ -1638,9 +1638,9 @@ const ITEMDATA __data[] =
 
 [ITEM_HYPER_POTION] =
 {
-    .price = 1500,
+    .price = 1200,
     .holdEffect = 0,
-    .holdEffectParam = 200,
+    .holdEffectParam = 120,
     .pluckEffect = 0,
     .flingEffect = 0,
     .flingPower = 30,
@@ -1693,7 +1693,7 @@ const ITEMDATA __data[] =
         .speed_ev_up_param = 0,
         .spatk_ev_up_param = 0,
         .spdef_ev_up_param = 0,
-        .hp_restore_param = 200,
+        .hp_restore_param = 120,
         .pp_restore_param = 0,
         .friendship_mod_lo_param = 0,
         .friendship_mod_med_param = 0,
@@ -1705,7 +1705,7 @@ const ITEMDATA __data[] =
 {
     .price = 700,
     .holdEffect = 0,
-    .holdEffectParam = 50,
+    .holdEffectParam = 60,
     .pluckEffect = 0,
     .flingEffect = 0,
     .flingPower = 30,
@@ -1758,7 +1758,7 @@ const ITEMDATA __data[] =
         .speed_ev_up_param = 0,
         .spatk_ev_up_param = 0,
         .spdef_ev_up_param = 0,
-        .hp_restore_param = 50,
+        .hp_restore_param = 60,
         .pp_restore_param = 0,
         .friendship_mod_lo_param = 0,
         .friendship_mod_med_param = 0,

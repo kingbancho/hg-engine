@@ -134,6 +134,14 @@ BOOL BattleController_CheckTypeBasedMoveConditionImmunities2(struct BattleSystem
 BOOL BattleController_CheckStrongWindsWeaken(struct BattleSystem *bw, struct BattleStruct *sp, int defender);
 BOOL BattleController_CheckTeraShell(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx UNUSED, int defender UNUSED);
 BOOL BattleController_TryConsumeDamageReductionBerry(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender);
+void BattleController_ResetGeneralMoveFailureFlags(struct BattleStruct *ctx, int attack_client, BOOL setsMoveConditionalFailureFlag);
+
+
+
+BOOL CanHitThroughSemiInvulnerability(struct BattleStruct *ctx, int attacker, int defender);
+BOOL CanHitThroughProtect(struct BattleStruct *ctx, int attacker, int defender);
+BOOL CheckProtectedByAlly(struct BattleStruct *ctx, int ally, u16 *protectedMoveMessage);
+BOOL CheckProtectedBySelf(struct BattleStruct *ctx, int ally, u16 *protectedMoveMessage);
 
 /// @brief Check if ability can be suppressed by Neutralizing Gas if value is not the same as CantSuppress.
 /// @param ability
@@ -192,14 +200,17 @@ BOOL LONG_CALL AbilityNoTransform(int ability);
  */
 void __attribute__((section (".init"))) BattleController_BeforeMove(struct BattleSystem *bsys, struct BattleStruct *ctx) {
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
-    debug_printf("In BattleController_BeforeMove\n");
+    debug_printf("In BattleController_BeforeMove %d, move %d, attacker %d\n", ctx->wb_seq_no, ctx->current_move_index, ctx->attack_client);
 #endif
 
-    CopyBattleMonToPartyMon(bsys, ctx, ctx->attack_client);
+    if (IsAttackerOnField(ctx)) {
+        CopyBattleMonToPartyMon(bsys, ctx, ctx->attack_client);
+    }
+
 
     if (ctx->waza_status_flag & WAZA_STATUS_FLAG_NO_OUT) {
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
-        debug_printf("WAZA_STATUS_FLAG_NO_OUT set, check Metronome");
+        debug_printf("WAZA_STATUS_FLAG_NO_OUT set, check Metronome\n");
 #endif
         ctx->server_seq_no = CONTROLLER_COMMAND_26;
         ST_ServerMetronomeBeforeCheck(bsys, ctx);  // 801ED20h
@@ -219,9 +230,10 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
             debug_printf("In BEFORE_MOVE_START\n");
 #endif
-
-            ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_DESTINY_BOND;
-            ctx->battlemon[ctx->attack_client].effect_of_moves &= ~MOVE_EFFECT_FLAG_GRUDGE;
+            if (IsAttackerOnField(ctx)) {
+                ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_DESTINY_BOND;
+                ctx->battlemon[ctx->attack_client].effect_of_moves &= ~MOVE_EFFECT_FLAG_GRUDGE;
+            }
             // reset new stuff here, because subscript is modified
             // ctx->battlemon[ctx->attack_client].moveeffect.custapBerryFlag = 0;
             // ctx->battlemon[ctx->attack_client].moveeffect.quickClawFlag = 0;
@@ -261,7 +273,11 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             int seq_no;
 
             if ((ctx->waza_out_check_on_off & SYSCTL_SKIP_OBEDIENCE_CHECK) == 0) {
+#ifdef DEBUG_BATTLE_SCENARIOS
+                ret = 0;
+#else
                 ret = ServerBadgeCheck(bsys, ctx, &seq_no);  // 8013610h
+#endif
                 if (ret) {
                     switch (ret) {
                         case OBEY_CHECK_DO_NOTHING:
@@ -288,14 +304,16 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             debug_printf("In BEFORE_MOVE_STATE_CHECK_PP\n");
 #endif
 
-            BattleController_CheckPP(bsys, ctx);
+            if (!ctx->futureSightHitTurn) {
+                BattleController_CheckPP(bsys, ctx);
+            }
             ctx->wb_seq_no++;
             return;
         }
         // TODO implement new mechanics
         case BEFORE_MOVE_STATE_DISPLAY_Z_DANCE_AND_EFFECT: {
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
-            debug_printf("In BEFORE_MOVE_STATE_DIctxLAY_Z_DANCE_AND_EFFECT\n");
+            debug_printf("In BEFORE_MOVE_STATE_DISPLAY_Z_DANCE_AND_EFFECT\n");
 #endif
 
             ctx->wb_seq_no++;
@@ -386,9 +404,9 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             ctx->wb_seq_no++;
             return;
         }
-        case BEFORE_MOVE_STATE_IMPRISION: {
+        case BEFORE_MOVE_STATE_IMPRISON: {
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
-            debug_printf("In BEFORE_MOVE_STATE_IMPRISION\n");
+            debug_printf("In BEFORE_MOVE_STATE_IMPRISON\n");
 #endif
 
             if ((ctx->waza_out_check_on_off & SYSCTL_SKIP_STATUS_CHECK) == FALSE) {
@@ -439,8 +457,9 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             // debug_printf("current_move_index: %d\n", ctx->current_move_index);
             // debug_printf("moveNoTemp: %d\n", ctx->moveNoTemp);
 #endif
-
-            BattleController_CheckSubmove(bsys, ctx);
+            if (!ctx->futureSightHitTurn) {
+                BattleController_CheckSubmove(bsys, ctx);
+            }
             ctx->wb_seq_no++;
             return;
         }
@@ -448,8 +467,9 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
             debug_printf("In BEFORE_MOVE_STATE_THAW_OUT_BY_MOVE\n");
 #endif
-
-            BattleController_CheckThawOut(bsys, ctx);
+            if (!ctx->futureSightHitTurn) {
+                BattleController_CheckThawOut(bsys, ctx);
+            }
             ctx->wb_seq_no++;
             return;
         }
@@ -477,7 +497,8 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #endif
 
             ctx->wb_seq_no++;
-            if (BattlerController_RedirectTarget(bsys, ctx) == TRUE) {
+            if (!ctx->futureSightHitTurn && BattlerController_RedirectTarget(bsys, ctx) == TRUE)
+            {
                 return;
             }
             FALLTHROUGH;
@@ -492,7 +513,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             // debug_printf("moveNoTemp: %d\n", ctx->moveNoTemp);
 #endif
             // debug_printf("before pp: %d\n", ctx->battlemon[ctx->attack_client].pp[0]);
-            if ((ctx->waza_out_check_on_off & 0x8) == 0) {
+            if ((ctx->waza_out_check_on_off & SYSCTL_SKIP_PP_DECREMENT) == 0) {
                 // debug_printf("Enter BattlerController_DecrementPP\n");
                 //  pp检查
                 if (BattlerController_DecrementPP(bsys, ctx) == TRUE)  // 801393Ch
@@ -509,16 +530,17 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
             debug_printf("In BEFORE_MOVE_STATE_CHOICE_LOCK\n");
 #endif
-
-            // debug_printf("current_move_index: %d\n", ctx->current_move_index);
-            int itemEffect = HeldItemHoldEffectGet(ctx, ctx->attack_client);
-            if (itemEffect == HOLD_EFFECT_CHOICE_ATK || itemEffect == HOLD_EFFECT_CHOICE_SPEED || itemEffect == HOLD_EFFECT_CHOICE_SPATK) {
-                if (ctx->waza_work != MOVE_STRUGGLE
-                && (ctx->waza_work != MOVE_U_TURN || (ctx->server_status_flag2 & SYSCTL_UTURN_ACTIVE) == FALSE)
-                && (ctx->waza_work != MOVE_BATON_PASS || (ctx->server_status_flag2 & SYSCTL_MOVE_SUCCEEDED) == FALSE)) {
-                    ctx->battlemon[ctx->attack_client].moveeffect.moveNoChoice = ctx->current_move_index;
-                } else {
-                    ctx->battlemon[ctx->attack_client].moveeffect.moveNoChoice = MOVE_NONE;
+            if (!ctx->futureSightHitTurn) {
+                // debug_printf("current_move_index: %d\n", ctx->current_move_index);
+                int itemEffect = HeldItemHoldEffectGet(ctx, ctx->attack_client);
+                if (itemEffect == HOLD_EFFECT_CHOICE_ATK || itemEffect == HOLD_EFFECT_CHOICE_SPEED || itemEffect == HOLD_EFFECT_CHOICE_SPATK) {
+                    if (ctx->waza_work != MOVE_STRUGGLE
+                        && (ctx->waza_work != MOVE_U_TURN || (ctx->server_status_flag2 & SYSCTL_UTURN_ACTIVE) == FALSE)
+                        && (ctx->waza_work != MOVE_BATON_PASS || (ctx->server_status_flag2 & SYSCTL_MOVE_SUCCEEDED) == FALSE)) {
+                        ctx->battlemon[ctx->attack_client].moveeffect.moveNoChoice = ctx->current_move_index;
+                    } else {
+                        ctx->battlemon[ctx->attack_client].moveeffect.moveNoChoice = MOVE_NONE;
+                    }
                 }
             }
             ctx->wb_seq_no++;
@@ -551,7 +573,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
             debug_printf("In BEFORE_MOVE_STATE_CONSUME_MICLE_BERRY_FLAG\n");
 #endif
 
-            if (ctx->battlemon[ctx->attack_client].moveeffect.boostedAccuracy) {
+            if (IsAttackerOnField(ctx) && ctx->battlemon[ctx->attack_client].moveeffect.boostedAccuracy) {
                 ctx->boostedAccuracy = TRUE;
                 ctx->battlemon[ctx->attack_client].moveeffect.boostedAccuracy = 0;
             }
@@ -565,7 +587,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #endif
 
             ctx->wb_seq_no++;
-            if (BattleController_CheckMoveFailures1(bsys, ctx)) {
+            if (!ctx->futureSightHitTurn && BattleController_CheckMoveFailures1(bsys, ctx)) {
                 return;
             }
             FALLTHROUGH;
@@ -597,7 +619,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #endif
 
             ctx->wb_seq_no++;
-            if (BattleController_CheckInterruptibleMoves(bsys, ctx)) {
+            if (!ctx->futureSightHitTurn && BattleController_CheckInterruptibleMoves(bsys, ctx)) {
                 return;
             }
             FALLTHROUGH;
@@ -606,8 +628,10 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
             debug_printf("In BEFORE_MOVE_STATE_PROTEAN_OR_LIBERO\n");
 #endif
+
             u32 type = GetAdjustedMoveType(ctx, ctx->attack_client, ctx->current_move_index);
-            if ((ctx->battlemon[ctx->attack_client].ability == ABILITY_PROTEAN || ctx->battlemon[ctx->attack_client].ability == ABILITY_LIBERO)
+            if (!ctx->futureSightHitTurn
+                && (ctx->battlemon[ctx->attack_client].ability == ABILITY_PROTEAN || ctx->battlemon[ctx->attack_client].ability == ABILITY_LIBERO)
                 // If the type is not typeless (Struggle)
                 && (type != TYPE_TYPELESS)
                 // If any active type is not the move's type
@@ -615,7 +639,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
                 // Protean cannot activate if the client is Terastallized
                 && (!ctx->battlemon[ctx->attack_client].is_currently_terastallized)
                 // Protean should activate only once per switch-in if gen 9 behavior
-                && (ctx->battlemon[ctx->attack_client].ability_activated_flag == 0 || PROTEAN_GENERATION < 9)) 
+                && (ctx->battlemon[ctx->attack_client].ability_activated_flag == 0 || PROTEAN_GENERATION < 9))
             {
                 ctx->battlemon[ctx->attack_client].type1 = type;
                 ctx->battlemon[ctx->attack_client].type2 = type;
@@ -640,7 +664,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #endif
 
             ctx->wb_seq_no++;
-            if (BattleController_CheckChargeMoves(bsys, ctx)) {
+            if (!ctx->futureSightHitTurn && BattleController_CheckChargeMoves(bsys, ctx)) {
                 return;
             }
             FALLTHROUGH;
@@ -703,7 +727,7 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
         case BEFORE_MOVE_STATE_SET_CRASH_FLAG: {
             // handle moves that can "keep going and crash"
             u32 moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
-            if (moveEffect == MOVE_EFFECT_CRASH_ON_MISS || moveEffect == MOVE_EFFECT_CONFUSE_AND_CRASH_IF_MISS)
+            if (moveEffect == MOVE_EFFECT_CRASH_ON_MISS || moveEffect == MOVE_EFFECT_CONFUSE_HIT_CRASH_ON_MISS)
                 ctx->server_status_flag |= BATTLE_STATUS_CRASH_DAMAGE;
             ctx->wb_seq_no++;
             FALLTHROUGH;
@@ -1079,21 +1103,29 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
         case BEFORE_MOVE_STATE_GEM_ACTIVATION:
         {
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
-            debug_printf("In BEFORE_MOVE_STATE_GEM_ACTIVATION\n");
+            if (IsAttackerOnField(ctx))
+                debug_printf("In BEFORE_MOVE_STATE_GEM_ACTIVATION effect %d, type %d\n", HeldItemHoldEffectGet(ctx, ctx->attack_client), BattleItemDataGet(ctx, ctx->battlemon[ctx->attack_client].item, 2));
 #endif
+
             ctx->wb_seq_no++;
 
-            if (HeldItemHoldEffectGet(ctx, ctx->attack_client) == HOLD_EFFECT_POWERING_UP_MOVE_ONCE
+            if (IsAttackerOnField(ctx)
+                && HeldItemHoldEffectGet(ctx, ctx->attack_client) == HOLD_EFFECT_POWERING_UP_MOVE_ONCE
                 && (BattleItemDataGet(ctx, ctx->battlemon[ctx->attack_client].item, 2) == ctx->move_type)
+                && (ctx->current_move_index != MOVE_STRUGGLE)
                 && (ctx->current_move_index < MOVE_WATER_PLEDGE || ctx->current_move_index > MOVE_GRASS_PLEDGE)
-                && IsAnyBattleMonHit(ctx))
+                && IsAnyBattleMonHit(bsys, ctx))
             {
+                ctx->mp.tag = TAG_ITEM_MOVE;
+                //The { STRVAR_1 1, 0, 0 } strengthened\n { STRVAR_1 5, 1, 0 }’s power !
+                ctx->mp.id = BATTLE_MSG_GEM_ACTIVATION;
+                ctx->mp.param[0] = ctx->battlemon[ctx->attack_client].item;
+                ctx->mp.param[1] = ctx->current_move_index;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_HANDLE_GEM_ACTIVATION_MESSAGE);
                 ctx->next_server_seq_no = ctx->server_seq_no;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
                 ctx->gemBoostingMove = TRUE;
                 return;
-
             }
             FALLTHROUGH;
         }
@@ -1128,7 +1160,6 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
 #ifdef DEBUG_BEFORE_MOVE_LOGIC
             debug_printf("In BEFORE_MOVE_END\n");
 #endif
-
             // TODO: move it to the end of TryMove after the entire overhaul, but this works perfectly fine here
             // Edit: Should be fine after the function merges by Blu
             if (IsValidParentalBondMove(bsys, ctx, FALSE) &&
@@ -1140,13 +1171,14 @@ void __attribute__((section (".init"))) BattleController_BeforeMove(struct Battl
                 ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = TRUE;
             } else {
                 ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
-                //ctx->wb_seq_no = BEFORE_MOVE_START_FLAG_UNLOAD;
             }
 
             ctx->wb_seq_no = BEFORE_MOVE_START_FLAG_UNLOAD;
             break;
         }
     }
+
+    CanGetNextDefender(bsys, ctx); //at least one valid hit
 
     // Redirect to original TryMove
     ctx->server_seq_no = CONTROLLER_COMMAND_24;
@@ -1348,6 +1380,15 @@ void BattleController_CheckGravityOrThroatChop(struct BattleSystem *bsys, struct
         ctx->server_status_flag |= BATTLE_STATUS_CHECK_LOOP_ONLY_ONCE;
         ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
     }
+    if (ctx->moveConditionsFlags[ctx->attack_client].throatChopTimer && IsMoveSoundBased(ctx->current_move_index)) {
+        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_MOVE_FAIL_THROAT_CHOP);
+        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->next_server_seq_no = CONTROLLER_COMMAND_39;
+        ctx->wb_seq_no = BEFORE_MOVE_START;
+        CopyBattleMonToPartyMon(bsys, ctx, ctx->attack_client);
+        ctx->server_status_flag |= BATTLE_STATUS_CHECK_LOOP_ONLY_ONCE;
+        ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
+    }
 }
 
 void BattleController_CheckTaunt(struct BattleSystem *bsys, struct BattleStruct *ctx) {
@@ -1480,6 +1521,49 @@ void BattleController_CheckStanceChange(struct BattleSystem *bsys, struct Battle
     }
 }
 
+
+void CheckDragonDartsDiverting(struct BattleSystem* bsys, struct BattleStruct* ctx, int defender)
+{
+    u32 flag = 0;
+    u16 protectedMoveMessage = 0;
+    BOOL hitThroughSemi = TRUE;
+    if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_SEMI_INVULNERABLE
+        && !CanHitThroughSemiInvulnerability(ctx, ctx->attack_client, ctx->defence_client))
+    {
+        hitThroughSemi = FALSE;
+    }
+    BOOL monProtected = FALSE;
+    if(ctx->oneTurnFlag[defender].protectFlag
+        && (CheckProtectedByAlly(ctx, BATTLER_ALLY(ctx->defence_client), &protectedMoveMessage) || CheckProtectedBySelf(ctx, ctx->defence_client, &protectedMoveMessage)))
+    {
+        monProtected = TRUE;
+    }
+    BOOL hitThroughAbility = TRUE;//MoveCheckDamageNegatingAbilities(ctx, ctx->attack_client, ctx->defence_client);
+    // check prankster prio when using with copycat
+    int canHitType = GetTypeEffectiveness(bsys, ctx, ctx->attack_client, ctx->defence_client, ctx->move_type, &flag);
+    CalcAccuracy(bsys, ctx, ctx->attack_client, ctx->defence_client, ctx->current_move_index);
+    BOOL hitWithAccuracy = TRUE;
+    if (ctx->waza_status_flag & MOVE_STATUS_FLAG_MISS)
+    {
+        hitWithAccuracy = FALSE;
+        ctx->waza_status_flag &= ~MOVE_STATUS_FLAG_MISS;
+    }
+
+
+    if (hitThroughSemi == FALSE || monProtected == TRUE || hitThroughAbility == FALSE || canHitType == TYPE_MUL_NO_EFFECT || hitWithAccuracy == FALSE) {
+        if (ctx->battlemon[BATTLER_ALLY(ctx->defence_client)].hp) {
+            ctx->defence_client = BATTLER_ALLY(defender);
+
+            if (ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus < 2) {
+                ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus = DRAGON_DARTS_DIVERTING;
+            }
+            if (hitWithAccuracy == FALSE) {
+                ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus = DRAGON_DARTS_DIVERTING_ACCURACY_MISS;
+            }
+        }
+    }
+}
+
 // TODO: Surely this can be simplified? When Mirror Coat is also modernised?
 BOOL BattlerController_RedirectTarget(struct BattleSystem *bsys, struct BattleStruct *ctx) {
     int side;
@@ -1489,7 +1573,9 @@ BOOL BattlerController_RedirectTarget(struct BattleSystem *bsys, struct BattleSt
     int maxBattlers;
     int battlerIdAttacker = ctx->attack_client;
     int range;
-
+#ifdef DEBUG_BEFORE_MOVE_LOGIC
+    debug_printf("BattlerController_RedirectTarget: defender %d\n", ctx->defence_client);
+#endif
     if (ctx->defence_client == BATTLER_NONE) {
         return FALSE;
     }
@@ -1525,7 +1611,10 @@ BOOL BattlerController_RedirectTarget(struct BattleSystem *bsys, struct BattleSt
                 break;
             }
         }
-        if (battlerIdTarget != ctx->defence_client) {
+        if (battlerIdTarget != ctx->defence_client
+            && ctx->current_move_index != MOVE_SNIPE_SHOT
+            && (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_PROPELLER_TAIL)
+            && (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_STALWART)) {
             ctx->oneSelfFlag[battlerIdTarget].lightningRodFlag = TRUE;
             ctx->defence_client = battlerIdTarget;
         }
@@ -1536,7 +1625,10 @@ BOOL BattlerController_RedirectTarget(struct BattleSystem *bsys, struct BattleSt
                 break;
             }
         }
-        if (battlerIdTarget != ctx->defence_client) {
+        if (battlerIdTarget != ctx->defence_client 
+            && ctx->current_move_index != MOVE_SNIPE_SHOT
+            && (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_PROPELLER_TAIL)
+            && (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_STALWART)) {
             ctx->oneSelfFlag[battlerIdTarget].stormDrainFlag = TRUE;
             ctx->defence_client = battlerIdTarget;
         }
@@ -1559,6 +1651,32 @@ BOOL BattlerController_RedirectTarget(struct BattleSystem *bsys, struct BattleSt
         ctx->next_server_seq_no = ctx->server_seq_no;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
         ret = TRUE;
+    }
+
+    if (ctx->current_move_index == MOVE_DRAGON_DARTS && (BattleTypeGet(bsys) & (BATTLE_TYPE_DOUBLE | BATTLE_TYPE_MULTI))) {
+        ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus = DRAGON_DARTS_CAN_DIVERT;
+#ifdef DEBUG_BEFORE_MOVE_LOGIC
+        debug_printf("defender %d, hp %d, hitcount %d, status %d\n", ctx->defence_client, ctx->battlemon[ctx->defence_client].hp, ctx->multiHitCount, ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus);
+#endif
+        if (ctx->multiHitCount == 0) { //hitcount not yet calced
+#ifdef DEBUG_BEFORE_MOVE_LOGIC
+            debug_printf("case = 0 \n");
+#endif
+            CheckDragonDartsDiverting(bsys, ctx, ctx->defence_client);
+        } else if (ctx->multiHitCount == 1 && ctx->moveConditionsFlags[ctx->attack_client].dragonDartsStatus <= DRAGON_DARTS_CAN_DIVERT) {
+#ifdef DEBUG_BEFORE_MOVE_LOGIC
+            debug_printf("case = 1, checking ally %d\n", BATTLER_ALLY(ctx->defence_client));
+#endif
+            ctx->defence_client = BATTLER_ALLY(ctx->defence_client);
+            CheckDragonDartsDiverting(bsys, ctx, ctx->defence_client);
+        }
+
+        else
+        {
+#ifdef DEBUG_BEFORE_MOVE_LOGIC
+            debug_printf("else \n");
+#endif
+        }
     }
 
     return ret;
@@ -1663,44 +1781,50 @@ void BattleController_CheckThawOut(struct BattleSystem *bsys UNUSED, struct Batt
 
 // TODO: make it so that it doesn't do redundant damage calculations
 void BattleController_CheckSubmove(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx) {
+    u32 currentMoveEffect = ctx->moveTbl[ctx->current_move_index].effect;
+
     // Include Me First here for now
-    if (ctx->current_move_index == MOVE_COPYCAT ||
-        ctx->current_move_index == MOVE_METRONOME ||
-        ctx->current_move_index == MOVE_NATURE_POWER ||
-        ctx->current_move_index == MOVE_SLEEP_TALK ||
-        ctx->current_move_index == MOVE_ME_FIRST) {
+    if (currentMoveEffect == MOVE_EFFECT_USE_RANDOM_ALLY_MOVE
+     || currentMoveEffect == MOVE_EFFECT_USE_LAST_USED_MOVE
+     || currentMoveEffect == MOVE_EFFECT_USE_MOVE_FIRST
+     || currentMoveEffect == MOVE_EFFECT_COPY_MOVE
+     || currentMoveEffect == MOVE_EFFECT_NATURE_POWER
+     || currentMoveEffect == MOVE_EFFECT_USE_RANDOM_LEARNED_MOVE_SLEEP
+     || currentMoveEffect == MOVE_EFFECT_STEAL_STATUS_MOVE) {
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_MOVE_SEQ, ctx->current_move_index);
         ctx->next_server_seq_no = ctx->server_seq_no;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
         // Submove announcement guarantees PP deduction.
         ServerPPCheck(bsys, ctx);
         // Technically the cases after Heal Block should not be checked again but functionally it should not matter?
-        ctx->wb_seq_no = BEFORE_MOVE_STATE_HEAL_BLOCK - 1;
+        // - it did functionally matter, had to move it to stance change
+        ctx->wb_seq_no = BEFORE_MOVE_STATE_STANCE_CHANGE - 1;
         return;
     }
 }
 
 BOOL BattleController_CheckPrimalWeather(struct BattleSystem *bsys, struct BattleStruct *ctx) {
-    // Handle Extremely Harsh Sunlight and Heavy Rain
-    if (!CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)) {
-        if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) && (ctx->move_type == TYPE_WATER) && (ctx->moveTbl[ctx->current_move_index].split != SPLIT_STATUS)) {
-            LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANCEL_WATER_MOVE);
-            ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
-            ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
-            ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
-            ctx->wb_seq_no = BEFORE_MOVE_START;
-            return TRUE;
-        }
+    u32 weather = GetWeather(bsys, ctx, ctx->attack_client);
 
-        if ((ctx->field_condition & WEATHER_HEAVY_RAIN) && (ctx->move_type == TYPE_FIRE) && (ctx->moveTbl[ctx->current_move_index].split != SPLIT_STATUS)) {
-            LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANCEL_FIRE_MOVE);
-            ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
-            ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
-            ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
-            ctx->wb_seq_no = BEFORE_MOVE_START;
-            return TRUE;
-        }
+    // Handle Extremely Harsh Sunlight and Heavy Rain
+    if ((weather & WEATHER_EXTREMELY_HARSH_SUNLIGHT) && (ctx->move_type == TYPE_WATER) && (ctx->moveTbl[ctx->current_move_index].split != SPLIT_STATUS)) {
+        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANCEL_WATER_MOVE);
+        ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
+        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
+        ctx->wb_seq_no = BEFORE_MOVE_START;
+        return TRUE;
     }
+
+    if ((weather & WEATHER_HEAVY_RAIN) && (ctx->move_type == TYPE_FIRE) && (ctx->moveTbl[ctx->current_move_index].split != SPLIT_STATUS)) {
+        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANCEL_FIRE_MOVE);
+        ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
+        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
+        ctx->wb_seq_no = BEFORE_MOVE_START;
+        return TRUE;
+    }
+
     return FALSE;
 }
 
@@ -1720,8 +1844,7 @@ BOOL BattleController_CheckBurnUpOrDoubleShock(struct BattleSystem *bsys UNUSED,
     }
 
     if (!HasType(ctx, ctx->attack_client, typeToCheck)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1740,6 +1863,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     int cnt = GetBattlerLearnedMoveCount(bsys, ctx, ctx->attack_client);
     int move;
     int attackerAbility = GetBattlerAbility(ctx, ctx->attack_client);
+    u32 weather = GetWeather(bsys, ctx, 0xFF);  // Mega Sol does not affect Aurora Veil
 
     // For Sucker Punch
     if (ctx->battlemon[ctx->defence_client].moveeffect.encoredMove && ctx->battlemon[ctx->defence_client].moveeffect.encoredMove == ctx->battlemon[ctx->defence_client].move[ctx->battlemon[ctx->defence_client].moveeffect.encoredMoveIndex]) {
@@ -1755,8 +1879,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     || (currentMoveIndex == MOVE_HYPERSPACE_FURY && attackClient.species != SPECIES_HOOPA)
     // Aura Wheel when user isn't Morpeko
     || (currentMoveIndex == MOVE_AURA_WHEEL && attackClient.species != SPECIES_MORPEKO)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANT_USE_MOVE);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1768,8 +1891,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     if (currentMoveIndex == MOVE_HYPERSPACE_FURY
     && attackClient.species == SPECIES_HOOPA
     && attackClient.form_no == 0) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANT_USE_MOVE_HOOPA_CONFINED);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1779,45 +1901,64 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     }
 
     // Aurora Veil when it is not hailing
-    if ((currentMoveIndex == MOVE_AURORA_VEIL && !(ctx->field_condition & WEATHER_HAIL_ANY || ctx->field_condition & WEATHER_SNOW_ANY))
-    // Clangorous Soul when user lacks HP to execute the move
-    || ((currentMoveIndex == MOVE_CLANGOROUS_SOUL) && (attackClient.hp < (s32)(attackClient.maxhp / 3)))
-    // Fake Out / First Impression / Mat Block after user has already performed an action
-    || ((currentMoveIndex == MOVE_FAKE_OUT || currentMoveIndex == MOVE_FIRST_IMPRESSION || currentMoveIndex == MOVE_MAT_BLOCK) && attackClient.moveeffect.fakeOutCount != ctx->total_turn)
-    // Follow Me / Rage Powder in singles
-    || ((currentMoveIndex == MOVE_FOLLOW_ME || currentMoveIndex == MOVE_RAGE_POWDER) && !(BattleTypeGet(bsys) & (BATTLE_TYPE_MULTI | BATTLE_TYPE_DOUBLE)))
-    // Future Sight / Doom Desire into target that already has future attack
-    || (moveEffect == MOVE_EFFECT_HIT_IN_3_TURNS && (ctx->fcc.future_prediction_count[ctx->defence_client] != 0))
-    // Poltergeist when the target does not have an item
-    || (currentMoveIndex == MOVE_POLTERGEIST && defenceClient.item == ITEM_NONE)
-    // Sleep Talk / Snore while not asleep
-    || ((moveEffect == MOVE_EFFECT_USE_RANDOM_LEARNED_MOVE_SLEEP || moveEffect == MOVE_EFFECT_DAMAGE_WHILE_ASLEEP) && !(attackClient.condition & STATUS_SLEEP))
-    // Rest while user is already asleep
-    || (moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP && attackClient.condition & STATUS_SLEEP)
-    // Steel Roller when there is no Terrain
-    || (currentMoveIndex == MOVE_STEEL_ROLLER && ctx->terrainOverlay.type == TERRAIN_NONE)
-    // Stuff Cheeks when user doesn't have a Berry
-    || (currentMoveIndex == MOVE_STUFF_CHEEKS && !IS_ITEM_BERRY(attackClient.item))
-    // Stockpile with 3 Stockpiles already
-    || (moveEffect == MOVE_EFFECT_STOCKPILE && attackClient.moveeffect.stockpileCount == 3)
-    // Swallow / Spit Up with 0 Stockpiles
-    || ((moveEffect == MOVE_EFFECT_SWALLOW || moveEffect == MOVE_EFFECT_SPIT_UP) && attackClient.moveeffect.stockpileCount == 0)
-    // Last Resort when user has not used all its other moves once or user does not have Last Resort in its moveslot
-    || (moveEffect == MOVE_EFFECT_FAIL_IF_NOT_USED_ALL_OTHER_MOVES && (ctx->battlemon[ctx->attack_client].moveeffect.lastResortCount < cnt - 1 || cnt < 2))
-    // Sucker Punch when target doesn't have an eligible move pending
-    || (moveEffect == MOVE_EFFECT_HIT_FIRST_IF_TARGET_ATTACKING && (ctx->playerActions[ctx->defence_client][3] == CONTROLLER_COMMAND_40 || (ctx->moveTbl[move].power == 0 && !ctx->oneTurnFlag[ctx->defence_client].struggle_flag)))
-    // Teleport with nothing to switch to
-    || (moveEffect == MOVE_EFFECT_FLEE_FROM_WILD_BATTLE && (BattleTypeGet(bsys) & BATTLE_TYPE_TRAINER) && !CanSwitchMon(bsys, ctx, ctx->attack_client))
-    // TODO: Magic Room
-    // Fling / Natural Gift: Embargo or Magic Room are in effect, or ineligible held item, or no item
-    || ((moveEffect == MOVE_EFFECT_FLING || moveEffect == MOVE_EFFECT_NATURAL_GIFT) && attackClient.moveeffect.embargoFlag)
+    if ((currentMoveIndex == MOVE_AURORA_VEIL && !(weather & WEATHER_HAIL_ANY || weather & WEATHER_SNOW_ANY))
+        // Clangorous Soul when user lacks HP to execute the move
+        || ((currentMoveIndex == MOVE_CLANGOROUS_SOUL) && (attackClient.hp < (s32)(attackClient.maxhp / 3)))
+        // Fake Out / First Impression / Mat Block after user has already performed an action
+        || ((currentMoveIndex == MOVE_FAKE_OUT || currentMoveIndex == MOVE_FIRST_IMPRESSION || currentMoveIndex == MOVE_MAT_BLOCK) && attackClient.moveeffect.fakeOutCount != ctx->total_turn)
+        // Follow Me / Rage Powder in singles
+        || ((currentMoveIndex == MOVE_FOLLOW_ME || currentMoveIndex == MOVE_RAGE_POWDER) && !(BattleTypeGet(bsys) & (BATTLE_TYPE_MULTI | BATTLE_TYPE_DOUBLE)))
+        // Future Sight / Doom Desire into target that already has future attack
+        || (moveEffect == MOVE_EFFECT_HIT_IN_3_TURNS && (ctx->fcc.future_prediction_count[ctx->defence_client] != 0))
+        // Poltergeist when the target does not have an item
+        || (currentMoveIndex == MOVE_POLTERGEIST && defenceClient.item == ITEM_NONE)
+        // Sleep Talk / Snore while not asleep
+        || ((moveEffect == MOVE_EFFECT_USE_RANDOM_LEARNED_MOVE_SLEEP || moveEffect == MOVE_EFFECT_DAMAGE_WHILE_ASLEEP) && !(attackClient.condition & STATUS_SLEEP))
+        // Rest while user is already asleep
+        || (moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP && attackClient.condition & STATUS_SLEEP)
+        // Steel Roller when there is no Terrain
+        || (currentMoveIndex == MOVE_STEEL_ROLLER && ctx->terrainOverlay.type == TERRAIN_NONE)
+        // Stuff Cheeks when user doesn't have a Berry
+        || (currentMoveIndex == MOVE_STUFF_CHEEKS && !IS_ITEM_BERRY(attackClient.item))
+        // Stockpile with 3 Stockpiles already
+        || (moveEffect == MOVE_EFFECT_STOCKPILE && attackClient.moveeffect.stockpileCount == 3)
+        // Swallow / Spit Up with 0 Stockpiles
+        || ((moveEffect == MOVE_EFFECT_SWALLOW || moveEffect == MOVE_EFFECT_SPIT_UP) && attackClient.moveeffect.stockpileCount == 0)
+        // Last Resort when user has not used all its other moves once or user does not have Last Resort in its moveslot
+        || (moveEffect == MOVE_EFFECT_FAIL_IF_NOT_USED_ALL_OTHER_MOVES && (ctx->battlemon[ctx->attack_client].moveeffect.lastResortCount < cnt - 1 || cnt < 2))
+        // Sucker Punch when target doesn't have an eligible move pending
+        || (moveEffect == MOVE_EFFECT_HIT_FIRST_IF_TARGET_ATTACKING && (ctx->playerActions[ctx->defence_client][3] == CONTROLLER_COMMAND_40 || (ctx->moveTbl[move].power == 0 && !ctx->oneTurnFlag[ctx->defence_client].struggle_flag)))
+        // Teleport with nothing to switch to
+        || (moveEffect == MOVE_EFFECT_FLEE_FROM_WILD_BATTLE && (BattleTypeGet(bsys) & BATTLE_TYPE_TRAINER) && !CanSwitchMon(bsys, ctx, ctx->attack_client))
+        // TODO: Magic Room
+        // Fling / Natural Gift: Embargo or Magic Room are in effect, or ineligible held item, or no item
+        || ((moveEffect == MOVE_EFFECT_FLING || moveEffect == MOVE_EFFECT_NATURAL_GIFT) && (attackClient.moveeffect.embargoFlag || attackClient.item == 0))
+        || (moveEffect == MOVE_EFFECT_NATURAL_GIFT && GetNaturalGiftPower(ctx, ctx->attack_client) == 0)
+        || (moveEffect == MOVE_EFFECT_FLING && (IS_ITEM_GEM(attackClient.item) || !CanItemBeRemovedFromClient(attackClient.species, attackClient.item, attackClient.form_no) || attackerAbility == ABILITY_KLUTZ))
     ) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->server_seq_no = CONTROLLER_COMMAND_25;
         ctx->waza_status_flag |= MOVE_STATUS_FLAG_FAILED;
         return TRUE;
     }
+
+#if PREVENT_SELECTING_BERRY_PREREQUISITE_MOVES_GENERATION >= GEN_CHAMPIONS
+    if (ctx->current_move_index == MOVE_BELCH 
+        && ctx->onceOnlyMoveConditionFlags[SanitizeClientForTeamAccess(bsys, ctx->attack_client)][ctx->sel_mons_no[ctx->attack_client]].berryEatenAndCanBelch == FALSE) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
+
+        ctx->mp.id = BATTLE_MSG_CANT_POSSIBLY_USE_BELCH;
+        ctx->mp.tag = TAG_NICKNAME;
+        ctx->mp.param[0] = CreateNicknameTag(ctx, ctx->attack_client);
+
+        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANNOT_BELCH);
+        ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
+        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
+        ctx->wb_seq_no = BEFORE_MOVE_START;
+        return TRUE;
+    }
+#endif
 
     // Counter / Mirror Coat / Metal Burst when user hasn't been damaged
     // TODO: Copied from BtlCmd_Counter, BtlCmd_TryMetalBurst, contradicts existing documentation
@@ -1854,16 +1995,14 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     }
 
     if (flag) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->server_seq_no = CONTROLLER_COMMAND_25;
         ctx->waza_status_flag |= MOVE_STATUS_FLAG_FAILED;
         return TRUE;
     }
     // Weight moves into Dynamax
     if (IsWeightMove(currentMoveIndex) && defenceClient.is_currently_dynamaxed) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANT_USE_MOVE_DYNAMAX_TARGET);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1887,6 +2026,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
             && (currentMoveIndex != MOVE_WIDE_GUARD)
             && (currentMoveIndex != MOVE_MAT_BLOCK)
             && (currentMoveIndex != MOVE_CRAFTY_SHIELD))) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             ctx->server_seq_no = CONTROLLER_COMMAND_25;
             ctx->waza_status_flag |= MOVE_STATUS_FLAG_FAILED;
             ctx->protectSuccessTurns[ctx->attack_client] = 0;
@@ -1900,8 +2040,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
     if (moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP) {
         // Rest while user is at full HP
         if (attackClient.hp == (s32)attackClient.maxhp) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_RESTORE_HP_FULL_FAIL);
             ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
             ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1911,8 +2050,7 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
         }
         // Rest while user has Insomnia / Vital Spirit
         if (attackerAbility == ABILITY_INSOMNIA || attackerAbility == ABILITY_VITAL_SPIRIT) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             // TODO: test
             ctx->battlerIdTemp = ctx->attack_client;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_STAYED_AWAKE);
@@ -1923,6 +2061,27 @@ BOOL BattleController_CheckMoveFailures1(struct BattleSystem *bsys, struct Battl
             return TRUE;
         }
     }
+
+    // TODO: confirm location, Shell Trap, Fire Pledge when combining with Water Pledge only
+    u32 moveType = GetAdjustedMoveType(ctx, ctx->attack_client, ctx->current_move_index);
+    if (ctx->moveConditionsFlags[ctx->attack_client].powderBlockingFireMove == TRUE && moveType == TYPE_FIRE) {
+        //  && (ctx->current_move_index == MOVE_FIRE_PLEDGE && partnerMove != MOVE_WATER_PLEDGE) {
+        ctx->hp_calc_work = 0;
+        if (attackerAbility != ABILITY_MAGIC_GUARD) { //from emerald-expansion
+            ctx->hp_calc_work = attackClient.maxhp / 4;
+            ctx->hp_calc_work = ctx->hp_calc_work * (-1);
+        }
+        ctx->mp.id = 1612;
+
+        ctx->battlerIdTemp = ctx->attack_client;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
+        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_TAKE_POWDER_DAMAGE);
+        ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
+        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
+        return TRUE;
+    }
+
     return FALSE;
 }
 
@@ -1949,7 +2108,7 @@ void BattleController_CheckBide(struct BattleSystem *bsys, struct BattleStruct *
 }
 
 BOOL BattleController_CheckAbilityFailures1(struct BattleSystem *bsys, struct BattleStruct *ctx) {
-     if (ctx->defence_client == 0xFF) {
+     if (ctx->defence_client == BATTLER_NONE) {
         return FALSE;
     }
     int attacker = ctx->attack_client;
@@ -1963,6 +2122,7 @@ BOOL BattleController_CheckAbilityFailures1(struct BattleSystem *bsys, struct Ba
     case MOVE_MISTY_EXPLOSION:
         if (CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, defender, ABILITY_DAMP)
         && CLIENT_DOES_NOT_HAVE_MOLD_BREAKER_VARIATIONS(ctx, attacker)) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANNOT_USE_MOVE);
             ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
             ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1981,7 +2141,8 @@ BOOL BattleController_CheckAbilityFailures1(struct BattleSystem *bsys, struct Ba
     || CheckSideAbility(bsys, ctx, CHECK_ABILITY_SAME_SIDE_HP, defender, ABILITY_DAZZLING)
     || CheckSideAbility(bsys, ctx, CHECK_ABILITY_SAME_SIDE_HP, defender, ABILITY_ARMOR_TAIL))
     && CLIENT_DOES_NOT_HAVE_MOLD_BREAKER_VARIATIONS(ctx, attacker)) {
-        if (ctx->clientPriority[ctx->attack_client] && CurrentMoveShouldNotBeExemptedFromPriorityBlocking(ctx, attacker, defender)) {
+        if (IsAttackerOnField(ctx) && ctx->clientPriority[ctx->attack_client] && CurrentMoveShouldNotBeExemptedFromPriorityBlocking(ctx, attacker, defender)) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_CANNOT_USE_MOVE);
             ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
             ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -1998,7 +2159,8 @@ BOOL BattleController_CheckAbilityFailures1(struct BattleSystem *bsys, struct Ba
 BOOL BattleController_CheckInterruptibleMoves(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx) {
     int effect = ctx->moveTbl[ctx->current_move_index].effect;
     if (effect == MOVE_EFFECT_HIT_IN_3_TURNS) {
-        ctx->server_seq_no = CONTROLLER_COMMAND_25;
+        ctx->wb_seq_no = BEFORE_MOVE_END;
+        //ctx->server_seq_no = CONTROLLER_COMMAND_25;
         return TRUE;
     }
     return FALSE;
@@ -2006,9 +2168,12 @@ BOOL BattleController_CheckInterruptibleMoves(struct BattleSystem *bsys UNUSED, 
 
 // TODO: Check correctness
 // TODO: Implement new mechanics
-BOOL BattleController_CheckChargeMoves(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx) {
+BOOL BattleController_CheckChargeMoves(struct BattleSystem *bsys, struct BattleStruct *ctx) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
     BOOL needToRunScript = FALSE;
+    u32 weatherConsideringMegaSol = GetWeather(bsys, ctx, ctx->attack_client);
+    u32 weatherIgnoringMegaSol = GetWeather(bsys, ctx, 0xFF);
+
     if (!(ctx->battlemon[ctx->attack_client].condition2 & STATUS2_LOCKED_INTO_MOVE)) {
         switch (moveEffect) {
             case MOVE_EFFECT_BIDE:
@@ -2028,13 +2193,8 @@ BOOL BattleController_CheckChargeMoves(struct BattleSystem *bsys UNUSED, struct 
                 needToRunScript = TRUE;
                 break;
             case MOVE_EFFECT_CHARGE_TURN_SUN_SKIPS:
-                if (!CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)) {
-                    if ((ctx->field_condition & WEATHER_SUNNY_ANY)) {
-                        needToRunScript = FALSE;
-                    } else {
-                        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SUN_SKIPS_CHARGE_TURN);
-                        needToRunScript = TRUE;
-                    }
+                if (weatherConsideringMegaSol & WEATHER_SUNNY_ANY) {
+                    needToRunScript = FALSE;
                 } else {
                     LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SUN_SKIPS_CHARGE_TURN);
                     needToRunScript = TRUE;
@@ -2065,13 +2225,8 @@ BOOL BattleController_CheckChargeMoves(struct BattleSystem *bsys UNUSED, struct 
                 needToRunScript = TRUE;
                 break;
             case MOVE_EFFECT_CHARGE_TURN_SP_ATK_UP_RAIN_SKIPS:
-                if (!CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)) {
-                    if ((ctx->field_condition & WEATHER_RAIN_ANY)) {
-                        needToRunScript = FALSE;
-                    } else {
-                        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ELECTRO_SHOT_CHARGE_TURN);
-                        needToRunScript = TRUE;
-                    }
+                if (weatherIgnoringMegaSol & WEATHER_RAIN_ANY) {
+                    needToRunScript = FALSE;
                 } else {
                     LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ELECTRO_SHOT_CHARGE_TURN);
                     needToRunScript = TRUE;
@@ -2113,6 +2268,8 @@ BOOL BattleController_CheckChargeMoves(struct BattleSystem *bsys UNUSED, struct 
 BOOL BattleController_CheckPowerHerb(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
     BOOL needToRunScript = FALSE;
+    u32 weatherConsideringMegaSol = GetWeather(bsys, ctx, ctx->attack_client);
+    u32 weatherIgnoringMegaSol = GetWeather(bsys, ctx, 0xFF);
 
     // debug_printf("locked into move: %d\n", (ctx->battlemon[ctx->attack_client].condition2 & STATUS2_LOCKED_INTO_MOVE));
     // debug_printf("hold effect: %d\n", HeldItemHoldEffectGet(ctx, ctx->attack_client));
@@ -2122,20 +2279,18 @@ BOOL BattleController_CheckPowerHerb(struct BattleSystem *bsys UNUSED, struct Ba
     case MOVE_EFFECT_CHARGE_TURN_SUN_SKIPS:
         if ((ctx->battlemon[ctx->attack_client].condition2 & STATUS2_LOCKED_INTO_MOVE) && HeldItemHoldEffectGet(ctx, ctx->attack_client) == HOLD_EFFECT_CHARGE_SKIP) {
             needToRunScript = TRUE;
-            if (!CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)) {
-                if ((ctx->field_condition & WEATHER_SUNNY_ANY)) {
-                    needToRunScript = FALSE;
-                }
+
+            if (weatherConsideringMegaSol & WEATHER_SUNNY_ANY) {
+                needToRunScript = FALSE;
             }
         }
         break;
     case MOVE_EFFECT_CHARGE_TURN_SP_ATK_UP_RAIN_SKIPS:
         if ((ctx->battlemon[ctx->attack_client].condition2 & STATUS2_LOCKED_INTO_MOVE) && HeldItemHoldEffectGet(ctx, ctx->attack_client) == HOLD_EFFECT_CHARGE_SKIP) {
             needToRunScript = TRUE;
-            if (!CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bsys, ctx, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)) {
-                if ((ctx->field_condition & WEATHER_RAIN_ANY)) {
-                    needToRunScript = FALSE;
-                }
+
+            if (weatherIgnoringMegaSol & WEATHER_RAIN_ANY) {
+                needToRunScript = FALSE;
             }
         }
         break;
@@ -2175,7 +2330,7 @@ BOOL BattleController_CheckStolenBySnatch(struct BattleSystem *bw UNUSED, struct
 
     client_set_max = BattleWorkClientSetMaxGet(bw);
 
-    if (sp->defence_client == 0xFF) {
+    if (sp->defence_client == BATTLER_NONE) {
         return FALSE;
     }
 
@@ -2187,6 +2342,7 @@ BOOL BattleController_CheckStolenBySnatch(struct BattleSystem *bw UNUSED, struct
             if ((sp->server_status_flag & (BATTLE_STATUS_NO_MOVE_SET)) == 0) {
                 sp->moveProtect[sp->attack_client] = 0;
                 sp->waza_no_old[sp->attack_client] = sp->moveNoTemp;
+                sp->lastClientMoveType[sp->attack_client] = GetAdjustedMoveType(sp, sp->attack_client, sp->moveNoTemp);
                 sp->waza_no_last = sp->moveNoTemp;
                 sp->server_status_flag |= (BATTLE_STATUS_NO_MOVE_SET);
             }
@@ -2201,133 +2357,202 @@ BOOL BattleController_CheckStolenBySnatch(struct BattleSystem *bw UNUSED, struct
     return FALSE;
 }
 
-BOOL BattleController_CheckSemiInvulnerability(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
-    if (!(ctx->waza_status_flag & MOVE_STATUS_FLAG_LOCK_ON)
-    && !(GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_NO_GUARD)
-    && ctx->moveTbl[ctx->current_move_index].target != RANGE_ADJACENT_OPPONENTS
-    && (
-        (!(ctx->server_status_flag & BATTLE_STATUS_HIT_FLY) && ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_FLYING_IN_AIR)
-        || (!(ctx->server_status_flag & BATTLE_STATUS_SHADOW_FORCE) && ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_SHADOW_FORCE)
-        || (!(ctx->server_status_flag & BATTLE_STATUS_HIT_DIG) && ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_DIGGING)
-        || (!(ctx->server_status_flag & BATTLE_STATUS_HIT_DIVE) && ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_IS_DIVING)
-        )) {
-        ctx->moveStatusFlagForSpreadMoves[defender] = WAZA_STATUS_FLAG_KIE_NOHIT;
-        ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
-        ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
-        LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ATTACK_MISSED);
-        ctx->next_server_seq_no = ctx->server_seq_no;
-        ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+BOOL CanHitThroughSemiInvulnerability(struct BattleStruct *ctx, int attacker, int defender)
+{
+    if ((ctx->waza_status_flag & MOVE_STATUS_FLAG_LOCK_ON)
+        || (GetBattlerAbility(ctx, attacker) == ABILITY_NO_GUARD)
+        || (GetBattlerAbility(ctx, defender) == ABILITY_NO_GUARD))
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+BOOL BattleController_CheckSemiInvulnerability(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender)
+{
+    BOOL moveCanHit = FALSE;
+    if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_SEMI_INVULNERABLE) {
+        switch (ctx->current_move_index) {
+        case MOVE_SURF:
+        case MOVE_WHIRLPOOL:
+            if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_IS_DIVING) {
+                moveCanHit = TRUE;
+            }
+            break;
+        case MOVE_EARTHQUAKE:
+        case MOVE_FISSURE:
+        case MOVE_MAGNITUDE:
+            if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_DIGGING) {
+                moveCanHit = TRUE;
+            }
+            break;
+        case MOVE_SKY_UPPERCUT:
+        case MOVE_GUST:
+        case MOVE_TWISTER:
+        case MOVE_HURRICANE:
+        case MOVE_THUNDER:
+        case MOVE_SMACK_DOWN:
+        case MOVE_THOUSAND_ARROWS:
+            if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_FLYING_IN_AIR) {
+                moveCanHit = TRUE;
+            }
+            break;
+        default:
+            break;
+        }
+
+        if (!CanHitThroughSemiInvulnerability(ctx, ctx->attack_client, defender)
+            && (ctx->moveTbl[ctx->current_move_index].target != RANGE_ADJACENT_OPPONENTS)
+            && (moveCanHit == FALSE)) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
+            ctx->moveStatusFlagForSpreadMoves[defender] = WAZA_STATUS_FLAG_KIE_NOHIT;
+            LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ATTACK_MISSED);
+            ctx->next_server_seq_no = ctx->server_seq_no;
+            ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+BOOL CanHitThroughProtect(struct BattleStruct *ctx, int attacker, int defender)
+{
+    u32 moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
+    u32 ability = GetBattlerAbility(ctx, attacker);
+    if (moveEffect == MOVE_EFFECT_REMOVE_PROTECT
+        || moveEffect == MOVE_EFFECT_SHADOW_FORCE
+        || (ctx->current_move_index == MOVE_CURSE && HasType(ctx, attacker, TYPE_GHOST))
+        || ((ability == ABILITY_UNSEEN_FIST
+                || ability == ABILITY_PIERCING_DRILL)
+            && IsContactBeingMade(ability, HeldItemHoldEffectGet(ctx, attacker), HeldItemHoldEffectGet(ctx, defender), ctx->current_move_index, ctx->moveTbl[ctx->current_move_index].flag))) {
         return TRUE;
     }
     return FALSE;
 }
 
+BOOL CheckProtectedByAlly(struct BattleStruct *ctx, int ally, u16 *protectedMoveMessage)
+{
+    BOOL protectedByAlly = FALSE;
+    switch (ctx->moveProtect[ally]) {
+    case MOVE_QUICK_GUARD:
+        if (AdjustedMoveHasPositivePriority(ctx, ctx->attack_client)) {
+            protectedByAlly = TRUE;
+            *protectedMoveMessage = MOVE_QUICK_GUARD;
+        }
+        break;
+    case MOVE_WIDE_GUARD:
+        if (ctx->moveTbl[ctx->current_move_index].target == RANGE_ADJACENT_OPPONENTS
+            || ctx->moveTbl[ctx->current_move_index].target == RANGE_ALL_ADJACENT) {
+            protectedByAlly = TRUE;
+            *protectedMoveMessage = MOVE_WIDE_GUARD;
+        }
+        break;
+    case MOVE_MAT_BLOCK:
+        if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
+            protectedByAlly = TRUE;
+            *protectedMoveMessage = MOVE_MAT_BLOCK;
+        }
+        break;
+    case MOVE_CRAFTY_SHIELD:
+        if (GetMoveSplit(ctx, ctx->current_move_index) == SPLIT_STATUS) {
+            protectedByAlly = TRUE;
+            *protectedMoveMessage = MOVE_CRAFTY_SHIELD;
+        }
+        break;
+    default:
+        break;
+    }
 
-BOOL BattleController_CheckProtect(struct BattleSystem *bsys, struct BattleStruct *ctx, int defender) {
+    return protectedByAlly;
+}
+
+BOOL CheckProtectedBySelf(struct BattleStruct *ctx, int defender, u16 *protectedMoveMessage)
+{
+    BOOL protectedBySelf = FALSE;
+    switch (ctx->moveProtect[defender]) {
+    case MOVE_PROTECT:
+    case MOVE_DETECT:
+    case MOVE_SPIKY_SHIELD:
+    case MOVE_BANEFUL_BUNKER:
+    case MOVE_MAX_GUARD:
+        protectedBySelf = TRUE;
+        *protectedMoveMessage = 0;
+        break;
+    case MOVE_KINGS_SHIELD:
+    case MOVE_OBSTRUCT:
+    case MOVE_SILK_TRAP:
+    case MOVE_BURNING_BULWARK:
+        if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
+            protectedBySelf = TRUE;
+            *protectedMoveMessage = 0;
+        }
+        break;
+    case MOVE_MAT_BLOCK:
+        if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
+            protectedBySelf = TRUE;
+            *protectedMoveMessage = MOVE_MAT_BLOCK;
+        }
+        break;
+    case MOVE_QUICK_GUARD:
+        if (AdjustedMoveHasPositivePriority(ctx, ctx->attack_client)) {
+            protectedBySelf = TRUE;
+            *protectedMoveMessage = MOVE_QUICK_GUARD;
+        }
+        break;
+    case MOVE_WIDE_GUARD:
+        if (ctx->moveTbl[ctx->current_move_index].target == RANGE_ADJACENT_OPPONENTS
+            || ctx->moveTbl[ctx->current_move_index].target == RANGE_ALL_ADJACENT) {
+            protectedBySelf = TRUE;
+            *protectedMoveMessage = MOVE_WIDE_GUARD;
+        }
+        break;
+    case MOVE_CRAFTY_SHIELD:
+        if (GetMoveSplit(ctx, ctx->current_move_index) == SPLIT_STATUS) {
+            protectedBySelf = TRUE;
+            *protectedMoveMessage = MOVE_CRAFTY_SHIELD;
+        }
+        break;
+    default:
+        break;
+    }
+
+
+    return protectedBySelf;
+}
+
+
+BOOL BattleController_CheckProtect(struct BattleSystem *bsys, struct BattleStruct *ctx, int defender)
+{
     if (ctx->oneTurnFlag[defender].protectFlag
-     && ctx->moveTbl[ctx->current_move_index].flag & FLAG_PROTECT
-     && (!(GetBattlerAbility(ctx, ctx->attack_client) == ABILITY_UNSEEN_FIST && IsContactBeingMade(GetBattlerAbility(ctx, ctx->attack_client), HeldItemHoldEffectGet(ctx, ctx->attack_client), HeldItemHoldEffectGet(ctx, ctx->defence_client), ctx->current_move_index, ctx->moveTbl[ctx->current_move_index].flag)))
-     && (ctx->current_move_index != MOVE_CURSE || HasType(ctx, ctx->attack_client, TYPE_GHOST))
-   /*&& (!CheckMoveIsChargeMove(ctx, ctx->current_move_index) || ctx->server_status_flag & BATTLE_STATUS_CHARGE_MOVE_HIT)*/) {
-        BOOL runProtectedSubseq = FALSE;
+        && !CanHitThroughProtect(ctx, ctx->attack_client, defender)) {
+        BOOL protectedByAlly = FALSE;
+        BOOL protectedBySelf = FALSE;
         u16 protectedMoveMessage = 0;
 
-        switch (ctx->moveProtect[BATTLER_ALLY(defender)]) {
-            case MOVE_QUICK_GUARD:
-                if (AdjustedMoveHasPositivePriority(ctx, ctx->attack_client)) {
-                    runProtectedSubseq = TRUE;
-                    protectedMoveMessage = MOVE_QUICK_GUARD;
-                }
-                break;
-            case MOVE_WIDE_GUARD:
-                if (ctx->moveTbl[ctx->current_move_index].target == RANGE_ADJACENT_OPPONENTS
-                 || ctx->moveTbl[ctx->current_move_index].target == RANGE_ALL_ADJACENT) {
-                    runProtectedSubseq = TRUE;
-                    protectedMoveMessage = MOVE_WIDE_GUARD;
-                }
-                break;
-            case MOVE_MAT_BLOCK:
-                if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
-                    runProtectedSubseq = TRUE;
-                    protectedMoveMessage = MOVE_MAT_BLOCK;
-                }
-                break;
-            case MOVE_CRAFTY_SHIELD:
-                if (GetMoveSplit(ctx, ctx->current_move_index) == SPLIT_STATUS) {
-                    runProtectedSubseq = TRUE;
-                    protectedMoveMessage = MOVE_CRAFTY_SHIELD;
-                }
-                break;
-            default:
-                break;
-        }
+        protectedByAlly = CheckProtectedByAlly(ctx, BATTLER_ALLY(defender), &protectedMoveMessage);
 
         // Prevent previous Protect move being read if being attacked before using a different move
         if (ctx->oneTurnFlag[defender].gainedProtectFlagFromAlly == FALSE) {
-            switch (ctx->moveProtect[defender]) {
-                case MOVE_PROTECT:
-                case MOVE_DETECT:
-                case MOVE_SPIKY_SHIELD:
-                case MOVE_BANEFUL_BUNKER:
-                case MOVE_MAX_GUARD:
-                    runProtectedSubseq = TRUE;
-                    protectedMoveMessage = 0;
-                    break;
-                case MOVE_KINGS_SHIELD:
-                case MOVE_OBSTRUCT:
-                case MOVE_SILK_TRAP:
-                case MOVE_BURNING_BULWARK:
-                    if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
-                        runProtectedSubseq = TRUE;
-                        protectedMoveMessage = 0;
-                    }
-                    break;
-                case MOVE_MAT_BLOCK:
-                    if (GetMoveSplit(ctx, ctx->current_move_index) != SPLIT_STATUS) {
-                        runProtectedSubseq = TRUE;
-                        protectedMoveMessage = MOVE_MAT_BLOCK;
-                    }
-                    break;
-                case MOVE_QUICK_GUARD:
-                    if (AdjustedMoveHasPositivePriority(ctx, ctx->attack_client)) {
-                        runProtectedSubseq = TRUE;
-                        protectedMoveMessage = MOVE_QUICK_GUARD;
-                    }
-                    break;
-                case MOVE_WIDE_GUARD:
-                    if (ctx->moveTbl[ctx->current_move_index].target == RANGE_ADJACENT_OPPONENTS
-                     || ctx->moveTbl[ctx->current_move_index].target == RANGE_ALL_ADJACENT) {
-                        runProtectedSubseq = TRUE;
-                        protectedMoveMessage = MOVE_WIDE_GUARD;
-                    }
-                    break;
-                case MOVE_CRAFTY_SHIELD:
-                    if (GetMoveSplit(ctx, ctx->current_move_index) == SPLIT_STATUS) {
-                        runProtectedSubseq = TRUE;
-                        protectedMoveMessage = MOVE_CRAFTY_SHIELD;
-                    }
-                    break;
-                default:
-                    break;
-            }
+            protectedBySelf = CheckProtectedBySelf(ctx, defender, &protectedMoveMessage);
         }
 
-        if (runProtectedSubseq) {
+        if (protectedBySelf || protectedByAlly) {
             ctx->battlerIdTemp = defender;
             UnlockBattlerOutOfCurrentMove(bsys, ctx, ctx->attack_client);
-            ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
             ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_PROTECTED;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_PROTECTED);
-            
+
             if (protectedMoveMessage > 0) {
-                ctx->mp.msg_id = BATTLE_MSG_MOVE_PROTECTED_SIDE;
-                ctx->mp.msg_tag = TAG_NICKNAME_MOVE;
-                ctx->mp.msg_para[0] = CreateNicknameTag(ctx, defender);
-                ctx->mp.msg_para[1] = protectedMoveMessage;
+                ctx->mp.id = BATTLE_MSG_MOVE_PROTECTED_SIDE;
+                ctx->mp.tag = TAG_NICKNAME_MOVE;
+                ctx->mp.param[0] = CreateNicknameTag(ctx, defender);
+                ctx->mp.param[1] = protectedMoveMessage;
             } else {
-                ctx->mp.msg_id = BATTLE_MSG_PROTECTED_ITSELF;
-                ctx->mp.msg_tag = TAG_NICKNAME;
-                ctx->mp.msg_para[0] = CreateNicknameTag(ctx, defender);
+                ctx->mp.id = BATTLE_MSG_PROTECTED_ITSELF;
+                ctx->mp.tag = TAG_NICKNAME;
+                ctx->mp.param[0] = CreateNicknameTag(ctx, defender);
             }
 
             ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2343,10 +2568,13 @@ BOOL BattleController_CheckPsychicTerrain(struct BattleSystem *bsys UNUSED, stru
     // Handle Psychic Terrain
     // Block any natural priority move or a move made priority by an ability, if the terrain is Psychic Terrain
     // Courtesy of Dray (https://github.com/Drayano60)
-    if (ctx->terrainOverlay.type == PSYCHIC_TERRAIN && ctx->terrainOverlay.numberOfTurnsLeft > 0 && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)
-    && ctx->clientPriority[ctx->attack_client] && CurrentMoveShouldNotBeExemptedFromPriorityBlocking(ctx, ctx->attack_client, defender)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+    if (ctx->terrainOverlay.type == PSYCHIC_TERRAIN
+        && !ctx->futureSightHitTurn
+        && ctx->terrainOverlay.numberOfTurnsLeft > 0
+        && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)
+        && ctx->clientPriority[ctx->attack_client]
+        && CurrentMoveShouldNotBeExemptedFromPriorityBlocking(ctx, ctx->attack_client, defender)) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_NO_MORE_WORK;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_HANDLE_PSYCHIC_TERRAIN_PROTECTION);
@@ -2366,8 +2594,7 @@ BOOL BattleController_CheckTelekinesis(struct BattleSystem *bsys UNUSED, struct 
     if (ctx->current_move_index == MOVE_TELEKINESIS
      && (((defenderSpecies == SPECIES_GENGAR && defenderForm == 1) || defenderSpecies == SPECIES_DIGLETT || defenderSpecies == SPECIES_DUGTRIO || defenderSpecies == SPECIES_SANDYGAST || defenderSpecies == SPECIES_PALOSSAND)
       || ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_INGRAIN)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
@@ -2379,13 +2606,10 @@ BOOL BattleController_CheckTelekinesis(struct BattleSystem *bsys UNUSED, struct 
 }
 
 BOOL BattleController_CheckAbilityFailures2(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
-    if (!(ctx->waza_out_check_on_off & 0x10) && defender != 0xFF) {
+    if (!(ctx->waza_out_check_on_off & 0x10) && defender != BATTLER_NONE) {
         int scriptNum = MoveCheckDamageNegatingAbilities(ctx, ctx->attack_client, defender);
         if (scriptNum) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
-            ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
-            ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, scriptNum);
@@ -2404,7 +2628,7 @@ BOOL CalcDamageAndSetMoveStatusFlags(struct BattleSystem *bsys, struct BattleStr
         // TODO: Use GetTypeEffectiveness
         ServerDoTypeCalcMod(bsys, ctx, ctx->current_move_index, ctx->move_type, ctx->attack_client, defender, ctx->damageForSpreadMoves[defender], &temp);
         ctx->moveStatusFlagForSpreadMoves[defender] = temp;
-        if (ctx->moveStatusFlagForSpreadMoves[defender] & MOVE_STATUS_FLAG_NOT_EFFECTIVE) {
+        if (ctx->moveStatusFlagForSpreadMoves[defender] & MOVE_STATUS_FLAG_NOT_EFFECTIVE && IsAttackerOnField(ctx)) {
             ctx->moveOutCheck[ctx->attack_client].stoppedFromIneffective = TRUE;
         }
     }
@@ -2413,12 +2637,11 @@ BOOL CalcDamageAndSetMoveStatusFlags(struct BattleSystem *bsys, struct BattleStr
 
 // TODO: check message/subscript correctness, move damage out, handle Thousand Arrows
 BOOL BattleController_CheckTypeImmunity(struct BattleSystem *bsys, struct BattleStruct *ctx, int defender) {
-    if (!(ctx->waza_out_check_on_off & 2) && ctx->defence_client != 0xFF && CalcDamageAndSetMoveStatusFlags(bsys, ctx, defender) == TRUE) {
+    if (!(ctx->waza_out_check_on_off & 2) && ctx->defence_client != BATTLER_NONE && CalcDamageAndSetMoveStatusFlags(bsys, ctx, defender) == TRUE) {
         return FALSE;
     }
     if (ctx->moveStatusFlagForSpreadMoves[defender] & MOVE_STATUS_FLAG_NOT_EFFECTIVE) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2434,10 +2657,7 @@ BOOL BattleController_CheckLevitate(struct BattleSystem *bsys UNUSED, struct Bat
         // iron ball halves speed and grounds
         && (HeldItemHoldEffectGet(ctx, defender) != HOLD_EFFECT_SPEED_DOWN_GROUNDED)) {
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_LEVITATE_MISS;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
-        ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
-        ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_LEVITATE_FAIL);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2467,10 +2687,7 @@ BOOL BattleController_CheckAirBalloonTelekinesisMagnetRise(struct BattleSystem *
        ) {
         // TODO: if in the future the AI somehow needs to read this flag, create a new flag for Air Balloon
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_MAGNET_RISE_MISS;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
-        ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
-        ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT_ABILITY);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2483,8 +2700,7 @@ BOOL BattleController_CheckAirBalloonTelekinesisMagnetRise(struct BattleSystem *
 BOOL BattleController_CheckSafetyGoggles(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
     if (IsPowderMove(ctx->current_move_index) && HeldItemHoldEffectGet(ctx, ctx->defence_client) == HOLD_EFFECT_SPORE_POWDER_IMMUNITY) {
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_NOT_EFFECTIVE;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SAFETY_GOGGLES);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2500,8 +2716,7 @@ BOOL BattleController_CheckAbilityFailures3(struct BattleSystem *bsys UNUSED, st
     if ((MoldBreakerAbilityCheck(ctx, ctx->attack_client, defender, ABILITY_BULLETPROOF) && IsBallOrBombMove(ctx->current_move_index))
     // Handle Sticky Hold
     || (MoldBreakerAbilityCheck(ctx, ctx->attack_client, defender, ABILITY_STICKY_HOLD) && (ctx->current_move_index == MOVE_TRICK || ctx->current_move_index == MOVE_SWITCHEROO || ctx->current_move_index == MOVE_CORROSIVE_GAS))) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT_ABILITY);
@@ -2514,7 +2729,9 @@ BOOL BattleController_CheckAbilityFailures3(struct BattleSystem *bsys UNUSED, st
 
 BOOL BattleController_CheckTypeBasedMoveConditionImmunities1(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
-    int priority = ctx->clientPriority[ctx->attack_client];
+    int priority = 0;
+    if (IsAttackerOnField(ctx))
+        priority = ctx->clientPriority[ctx->attack_client];
 
     // Dark-type Prankster immunity
     if ((priority > 0 && GetMoveSplit(ctx, ctx->current_move_index) == SPLIT_STATUS && GetBattlerAbility(ctx, ctx->attack_client) == ABILITY_PRANKSTER && HasType(ctx, defender, TYPE_DARK) && (ctx->attack_client & 1) != (defender & 1)) // used on an enemy)
@@ -2525,8 +2742,7 @@ BOOL BattleController_CheckTypeBasedMoveConditionImmunities1(struct BattleSystem
     || (IsPowderMove(ctx->current_move_index) && HasType(ctx, defender, TYPE_GRASS))
     // Ice-type immunity to Sheer Cold
     || (ctx->current_move_index == MOVE_SHEER_COLD && HasType(ctx, defender, TYPE_ICE))) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_NOT_EFFECTIVE;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
@@ -2550,8 +2766,7 @@ BOOL BattleController_CheckMoveFailures2(struct BattleSystem *bsys UNUSED, struc
     // Torment into Dynamax
     || (moveEffect == MOVE_EFFECT_TORMENT && ctx->battlemon[defender].is_currently_dynamaxed)) {
         ctx->waza_status_flag |= MOVE_STATUS_FLAG_NOT_EFFECTIVE;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->server_seq_no = CONTROLLER_COMMAND_25;
         return TRUE;
     }
@@ -2561,6 +2776,7 @@ BOOL BattleController_CheckMoveFailures2(struct BattleSystem *bsys UNUSED, struc
 
 // TODO: implement new mechanics
 int BattleController_CheckMoveFailures2_VenomDrench(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx UNUSED, int defender UNUSED) {
+    //BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
     // return SUB_SEQ_BUT_IT_FAILED_SPREAD;
     return 0;
 }
@@ -2571,8 +2787,7 @@ BOOL BattleController_CheckWhirlwindFailures(struct BattleSystem *bsys UNUSED, s
     if (ctx->moveTbl[ctx->current_move_index].effect == MOVE_EFFECT_FORCE_SWITCH) {
         // 1. Handle Dynamax
         if (ctx->battlemon[defender].is_currently_dynamaxed) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_FORCE_SWITCH_FAIL_DYNAMAX);
             ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2583,8 +2798,7 @@ BOOL BattleController_CheckWhirlwindFailures(struct BattleSystem *bsys UNUSED, s
 
         // 2. Handle Suction Cups
         if (MoldBreakerAbilityCheck(ctx, ctx->attack_client, defender, ABILITY_SUCTION_CUPS)) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_FORCE_SWITCH_FAIL_SUCTION_CUPS);
             ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2595,8 +2809,7 @@ BOOL BattleController_CheckWhirlwindFailures(struct BattleSystem *bsys UNUSED, s
 
         // 3. Handle Ingrain
         if (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_FLAG_INGRAIN) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_FORCE_SWITCH_FAIL_INGRAIN);
             ctx->next_server_seq_no = ctx->server_seq_no;
@@ -2620,8 +2833,7 @@ BOOL BattleController_CheckTypeBasedMoveConditionImmunities2(struct BattleSystem
     || (moveEffect == MOVE_EFFECT_STATUS_LEECH_SEED && HasType(ctx, defender, TYPE_GRASS))
     // Poison / Steel-type poison / badly poison immunity
     || ((moveEffect == MOVE_EFFECT_STATUS_POISON || moveEffect == MOVE_EFFECT_STATUS_BADLY_POISON) && HasType(ctx, defender, TYPE_POISON) && GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_CORROSION)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_NOT_EFFECTIVE;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
@@ -2635,9 +2847,8 @@ BOOL BattleController_CheckTypeBasedMoveConditionImmunities2(struct BattleSystem
 BOOL BattleController_CheckUproarStoppingSleepMoves(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
 
-    if (ctx->field_condition & FIELD_STATUS_UPROAR && moveEffect == MOVE_EFFECT_STATUS_SLEEP) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+    if (ctx->field_condition & FIELD_STATUS_UPROAR && (moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN)) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_UPROAR_STOPPING_SLEEP_MOVES);
@@ -2646,9 +2857,8 @@ BOOL BattleController_CheckUproarStoppingSleepMoves(struct BattleSystem *bsys UN
         return TRUE;
     }
 
-    if (ctx->field_condition & FIELD_STATUS_UPROAR && moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+    if (ctx->field_condition & FIELD_STATUS_UPROAR && moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_UPROAR_STOPPING_REST);
@@ -2670,8 +2880,7 @@ BOOL BattleController_CheckSafeguard(struct BattleSystem *bsys UNUSED, struct Ba
         case MOVE_EFFECT_STATUS_BADLY_POISON:
         case MOVE_EFFECT_STATUS_BURN:
         case MOVE_EFFECT_STATUS_CONFUSE:
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
             ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_PROTECTED_BY_SAFEGUARD);
@@ -2693,8 +2902,9 @@ BOOL BattleController_CheckTerrainBlock(struct BattleSystem *bsys UNUSED, struct
     if (ctx->terrainOverlay.numberOfTurnsLeft > 0) {
         switch (ctx->terrainOverlay.type) {
             case ELECTRIC_TERRAIN:
-                if ((moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN) && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)) {
+                if ((moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN) && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)) {
                     ctx->battlerIdTemp = defender;
+                    BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, moveEffect != MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP);
                     LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ELECTRIC_TERRAIN_PROTECTION);
                     ctx->next_server_seq_no = ctx->server_seq_no;
                     ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -2704,8 +2914,9 @@ BOOL BattleController_CheckTerrainBlock(struct BattleSystem *bsys UNUSED, struct
                 break;
 
             case MISTY_TERRAIN:
-                if ((moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN || moveEffect == MOVE_EFFECT_STATUS_PARALYZE || moveEffect == MOVE_EFFECT_STATUS_POISON || moveEffect == MOVE_EFFECT_STATUS_BADLY_POISON || moveEffect == MOVE_EFFECT_STATUS_BURN || moveEffect == MOVE_EFFECT_STATUS_CONFUSE) && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)) {
+                if ((moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN || moveEffect == MOVE_EFFECT_STATUS_PARALYZE || moveEffect == MOVE_EFFECT_STATUS_POISON || moveEffect == MOVE_EFFECT_STATUS_BADLY_POISON || moveEffect == MOVE_EFFECT_STATUS_BURN || moveEffect == MOVE_EFFECT_STATUS_CONFUSE) && MoldBreakerIsClientGrounded(ctx, ctx->attack_client, defender)) {
                     ctx->battlerIdTemp = defender;
+                    BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, moveEffect != MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP);
                     LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_MISTY_TERRAIN_PROTECTION);
                     ctx->next_server_seq_no = ctx->server_seq_no;
                     ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -2723,7 +2934,9 @@ BOOL BattleController_CheckTerrainBlock(struct BattleSystem *bsys UNUSED, struct
 // TODO: Implement new mechanics
 int BattlerController_CheckSubstituteBlockingStatDropsOrDecorate(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
-    if (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_INFILTRATOR && ctx->battlemon[defender].condition2 & STATUS2_SUBSTITUTE) {
+    if (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_INFILTRATOR
+        && ctx->battlemon[defender].condition2 & STATUS2_SUBSTITUTE
+        && !IsMoveSoundBased(ctx->current_move_index)) {
         if (ctx->attack_client != defender) {
             switch (moveEffect) {
                 case MOVE_EFFECT_ATK_DOWN:
@@ -2747,6 +2960,8 @@ int BattlerController_CheckSubstituteBlockingStatDropsOrDecorate(struct BattleSy
                 case MOVE_EFFECT_SPEED_DOWN_3:
                 case MOVE_EFFECT_SP_ATK_DOWN_3:
                 case MOVE_EFFECT_SP_DEF_DOWN_3:
+                case MOVE_EFFECT_DECORATE:
+                    BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
                     return SUB_SEQ_DOESNT_AFFECT;
                     break;
 
@@ -2787,6 +3002,7 @@ int BattlerController_CheckMist(struct BattleSystem *bsys, struct BattleStruct *
             case MOVE_EFFECT_SP_DEF_DOWN_3:
                 // infiltrator bypasses mist
                 if (ctx->scw[IsClientEnemy(bsys, defender)].mistCount && GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_INFILTRATOR) {
+                    BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
                     return BATTLE_MSG_PROTECTED_BY_MIST;
                 }
                 break;
@@ -2912,12 +3128,27 @@ int BattleController_CheckAbilityFailures4_StatBasedFailures(struct BattleSystem
             break;
         }
         break;
+    case MOVE_EFFECT_PARTING_SHOT:
+        if (MoldBreakerAbilityCheck(ctx, ctx->attack_client, defender, ABILITY_HYPER_CUTTER) && ctx->battlemon[defender].states[STAT_SPATK] == 0) {
+            subscriptToRun = SUB_SEQ_ATTACK_NOT_LOWERED;
+            break;
+        }
+        if (hasFlowerVeil) {
+            subscriptToRun = SUB_SEQ_FLOWER_VEIL_FAIL;
+            break;
+        }
+        if (hasClearBodyOrFullMetalBodyOrWhiteSmoke) {
+            subscriptToRun = SUB_SEQ_STATS_NOT_LOWERED;
+            break;
+        }
+        break;
     default:
         subscriptToRun = 0;
         break;
     }
 
     if (subscriptToRun != 0) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         return subscriptToRun;
     }
     return FALSE;
@@ -2933,18 +3164,17 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
 
     BOOL hasFlowerVeil = HasType(ctx, defender, TYPE_GRASS) && (MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_FLOWER_VEIL) || MoldBreakerAbilityCheck(ctx, attacker, BATTLER_ALLY(defender), ABILITY_FLOWER_VEIL));
     BOOL hasPastelVeil = MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_PASTEL_VEIL) || MoldBreakerAbilityCheck(ctx, attacker, BATTLER_ALLY(defender), ABILITY_PASTEL_VEIL);
+    BOOL hasSweetVeil = MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_SWEET_VEIL) || MoldBreakerAbilityCheck(ctx, attacker, BATTLER_ALLY(defender), ABILITY_SWEET_VEIL);
 
     if (hasFlowerVeil) {
         switch (moveEffect) {
             case MOVE_EFFECT_STATUS_SLEEP:
             case MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN:
-            case MOVE_EFFECT_RECOVER_DAMAGE_SLEEP:
             case MOVE_EFFECT_STATUS_PARALYZE:
             case MOVE_EFFECT_STATUS_POISON:
             case MOVE_EFFECT_STATUS_BADLY_POISON:
             case MOVE_EFFECT_STATUS_BURN:
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
                 ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
                 ctx->battlerIdTemp = defender;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_FLOWER_VEIL_FAIL);
@@ -2958,11 +3188,28 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
         }
     }
 
-    // No Stomping Tantrum doubling
+    if (hasSweetVeil) {
+        switch (moveEffect) {
+        case MOVE_EFFECT_STATUS_SLEEP:
+        case MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN:
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
+            ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
+            ctx->battlerIdTemp = defender;
+            LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SWEET_VEIL_FAIL);
+            ctx->next_server_seq_no = ctx->server_seq_no;
+            ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+            return TRUE;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    // Rest : No Stomping Tantrum doubling
     if (ShieldsDownCanActivate || MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_LEAF_GUARD)) {
-        if (moveEffect == MOVE_EFFECT_RECOVER_DAMAGE_SLEEP) {
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-            ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        if (moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
             ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
             ctx->battlerIdTemp = defender;
             LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT_ABILITY);
@@ -2972,7 +3219,18 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
         }
     }
 
-    // TODO: implement Sweet Veil (Rest)
+    // Rest : No Stomping Tantrum doubling //TODO
+    if (hasSweetVeil) {
+        if (moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP) {
+            BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
+            ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
+            ctx->battlerIdTemp = defender;
+            LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SWEET_VEIL_FAIL);
+            ctx->next_server_seq_no = ctx->server_seq_no;
+            ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+            return TRUE;
+        }
+    }
 
     if (MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_COMATOSE)
     || MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_LEAF_GUARD)
@@ -2985,7 +3243,6 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
         doesNotAffect = TRUE;
     }
 
-    // TODO: implement Sweet Veil
     if ((MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_INSOMNIA))
     && (moveEffect == MOVE_EFFECT_STATUS_SLEEP || moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN || moveEffect == MOVE_EFFECT_RECOVER_HEALTH_AND_SLEEP)) {
         doesNotAffect = TRUE;
@@ -3000,8 +3257,7 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
     }
 
     if (MoldBreakerAbilityCheck(ctx, attacker, defender, ABILITY_OWN_TEMPO) && (moveEffect == MOVE_EFFECT_STATUS_CONFUSE)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_OWN_TEMPO_FAIL);
@@ -3033,8 +3289,7 @@ BOOL BattleController_CheckAbilityFailures4_StatusBasedFailures(struct BattleSys
     }
 
     if (doesNotAffect) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT_ABILITY);
@@ -3051,8 +3306,7 @@ BOOL BattleController_CheckAbilityFailures4_OtherAromaVeilSturdy(struct BattleSy
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
 
     if (MoldBreakerAbilityCheck(ctx, ctx->attack_client, ctx->defence_client, ABILITY_STURDY) && moveEffect == MOVE_EFFECT_ONE_HIT_KO) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[ctx->defence_client] = MOVE_STATUS_FLAG_FAILED;
         ctx->battlerIdTemp = ctx->defence_client;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT_ABILITY);
@@ -3072,13 +3326,17 @@ BOOL BattleController_CheckMoveAccuracy(struct BattleSystem *bsys, struct Battle
     }
 
     // Apply accuracy / evasion modifiers
-    if (!(ctx->waza_out_check_on_off & 0x20) && defender != BATTLER_NONE && BattleSystem_CheckMoveHit(bsys, ctx, ctx->attack_client, defender, ctx->current_move_index) == TRUE) {
+    if (!(ctx->waza_out_check_on_off & 0x20)
+        && defender != BATTLER_NONE
+        && IsAttackerOnField(ctx)
+        && BattleSystem_CheckMoveHit(bsys, ctx, ctx->attack_client, defender, ctx->current_move_index) == TRUE) {
         return FALSE;
     }
 
 
     // a multi-hit move is always single target
     if (ctx->loop_flag && (ctx->waza_status_flag & MOVE_STATUS_FLAG_MISS)) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->waza_status_flag &= ~MOVE_STATUS_FLAG_MISS;
         ctx->waza_status_flag |= MOVE_STATUS_FLAG_FURY_CUTTER_MISS;
         ctx->server_seq_no = CONTROLLER_COMMAND_29;
@@ -3086,12 +3344,9 @@ BOOL BattleController_CheckMoveAccuracy(struct BattleSystem *bsys, struct Battle
     }
 
     if (ctx->waza_status_flag & MOVE_STATUS_FLAG_MISS) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->waza_status_flag = 0;
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_MISS;
-        ctx->battlemon[ctx->attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
-        ctx->battlemon[ctx->attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ATTACK_MISSED);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -3103,10 +3358,11 @@ BOOL BattleController_CheckMoveAccuracy(struct BattleSystem *bsys, struct Battle
 
 BOOL BattleController_CheckSubstituteBlockingOtherEffects(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx) {
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
-    if (ctx->battlemon[ctx->defence_client].condition2 & STATUS2_SUBSTITUTE) {
+    if (ctx->battlemon[ctx->defence_client].condition2 & STATUS2_SUBSTITUTE
+        && !IsMoveSoundBased(ctx->current_move_index)) {
         if (ctx->attack_client != ctx->defence_client) {
             switch (moveEffect) {
-                // TODO: Handle Electrify, Flower Shield, Heal Pulse, Purify, Tar Shot, Topsy-Turvy
+                // TODO: Handle Electrify, Flower Shield, Purify, Tar Shot, Topsy-Turvy
 
                 // List of effects tested: attempting to inflict a major status condition, Acupressure, Block / Mean Look / Spider Web / Octolock, Electrify / Quash, Flower Shield, Forest's Curse / Trick-or-Treat / Soak / Magic Powder, Gastro Acid, Guard Split / Power Split, Heal Pulse, Leech Seed, Lock-On, Mind Reader, Pain Split, Psycho Shift, Purify, Simple Beam, Tar Shot, Topsy-Turvy, Transform, Worry Seed
                 case MOVE_EFFECT_RANDOM_STAT_UP_2:
@@ -3114,8 +3370,8 @@ BOOL BattleController_CheckSubstituteBlockingOtherEffects(struct BattleSystem *b
                 case MOVE_EFFECT_QUASH:
                 case MOVE_EFFECT_CHANGE_TO_WATER_TYPE:
                 case MOVE_EFFECT_CHANGE_TO_PSYCHIC_TYPE:
-                case MOVE_EFFECT_ADD_THIRD_TYPE_GRASS:
-                case MOVE_EFFECT_ADD_THIRD_TYPE_GHOST:
+                case MOVE_EFFECT_ADD_TYPE_GRASS:
+                case MOVE_EFFECT_ADD_TYPE_GHOST:
                 case MOVE_EFFECT_SUPRESS_ABILITY:
                 case MOVE_EFFECT_GUARD_SPLIT:
                 case MOVE_EFFECT_POWER_SPLIT:
@@ -3124,7 +3380,9 @@ BOOL BattleController_CheckSubstituteBlockingOtherEffects(struct BattleSystem *b
                 case MOVE_EFFECT_AVERAGE_HP:
                 case MOVE_EFFECT_TRANSFER_STATUS:
                 case MOVE_EFFECT_SET_ABILITY_TO_SIMPLE:
+                case MOVE_EFFECT_HEAL_TARGET:
                     if (GetBattlerAbility(ctx, ctx->attack_client) != ABILITY_INFILTRATOR) {
+                        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
                         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
                         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3136,6 +3394,7 @@ BOOL BattleController_CheckSubstituteBlockingOtherEffects(struct BattleSystem *b
                 // TODO: Handle Sky Drop here
                 case MOVE_EFFECT_TRANSFORM:
                 case MOVE_EFFECT_SET_ABILITY_TO_INSOMNIA:
+                    BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
                     LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
                     ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                     ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3162,9 +3421,13 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
     BOOL jungleHealingAllySuccess = FALSE;
     u32 clientPosition = 0;
     u32 maxBattlers = BattleWorkClientSetMaxGet(bsys);
-    u32 attackerSpecies = ctx->battlemon[ctx->attack_client].species;
+    u32 attackerSpecies = SPECIES_NONE;
+    u32 attackerItem = ITEM_NONE;
+    if (IsAttackerOnField(ctx)) {
+        attackerSpecies = ctx->battlemon[ctx->attack_client].species;
+        attackerItem = ctx->battlemon[ctx->attack_client].item;
+    }
     u32 defenderSpecies = ctx->battlemon[ctx->defence_client].species;
-    u32 attackerItem = ctx->battlemon[ctx->attack_client].item;
     u32 defenderItem = ctx->battlemon[ctx->defence_client].item;
 
     BOOL flowerShieldSuccessCount = 0;
@@ -3224,8 +3487,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
         case MOVE_HEAL_PULSE:
         case MOVE_FLORAL_HEALING: {
             if (ctx->battlemon[ctx->defence_client].hp == (s32)ctx->battlemon[ctx->defence_client].maxhp) {
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 ctx->battlerIdTemp = ctx->defence_client;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_HEAL_TARGET_HP_FULL_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
@@ -3258,10 +3520,9 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
         case MOVE_POLLEN_PUFF: {
             if ((ctx->battlemon[ctx->defence_client].hp == (s32)ctx->battlemon[ctx->defence_client].maxhp)
             && (ctx->defence_client == BATTLER_ALLY(ctx->attack_client))) {
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 ctx->battlerIdTemp = ctx->defence_client;
-                LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
+                LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_HEAL_TARGET_HP_FULL_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
                 ctx->waza_status_flag |= MOVE_STATUS_NO_MORE_WORK;
@@ -3271,7 +3532,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
             break;
         }
         case MOVE_BELLY_DRUM: {
-            if ((ctx->battlemon[ctx->defence_client].hp < (s32)ctx->battlemon[ctx->defence_client].maxhp / 2)
+            if ((ctx->battlemon[ctx->defence_client].hp <= (s32)ctx->battlemon[ctx->defence_client].maxhp / 2)
             || ctx->battlemon[ctx->defence_client].states[STAT_ATTACK] == 12) {
                 butItFailedFlag = TRUE;
             }
@@ -3319,6 +3580,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
         case MOVE_SWAGGER: {
             if (ctx->battlemon[ctx->defence_client].states[STAT_ATTACK] == 12
             && ctx->battlemon[ctx->defence_client].condition2 & STATUS2_CONFUSION) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_MOVE_SEQ, ctx->current_move_index);
                 ctx->server_seq_no = CONTROLLER_COMMAND_24;
                 ST_ServerTotteokiCountCalc(bsys, ctx);
@@ -3329,6 +3591,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
         case MOVE_FLATTER: {
             if (ctx->battlemon[ctx->defence_client].states[STAT_SPATK] == 12
             && ctx->battlemon[ctx->defence_client].condition2 & STATUS2_CONFUSION) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_MOVE_SEQ, ctx->current_move_index);
                 ctx->server_seq_no = CONTROLLER_COMMAND_24;
                 ST_ServerTotteokiCountCalc(bsys, ctx);
@@ -3356,8 +3619,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
             break;
         }
         case MOVE_CONVERSION_2: {
-            // TODO: Fail if the user has all types that resist the type of the last move used on them by the target.
-            // Stellar type moves fail regardless according to Bulbapedia; this is probably to prevent inverse battle shenanigans.
+            // Type-chart interaction failures are handled in TryConversion2.
             if (ctx->battlemon[ctx->attack_client].is_currently_terastallized) {
                 butItFailedFlag = TRUE;
             }
@@ -3575,6 +3837,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
                 butItFailedFlag = TRUE;
             }
             if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) || (ctx->field_condition & WEATHER_HEAVY_RAIN) || (ctx->field_condition & WEATHER_STRONG_WINDS)) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_USE_WEATHER_MOVE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3589,10 +3852,11 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
             || (ctx->field_condition & WEATHER_SUNNY_ANY)
             || (ctx->field_condition & WEATHER_SANDSTORM_PERMANENT)
             || (ctx->field_condition & WEATHER_HAIL_PERMANENT)
-            || (ctx->field_condition & WEATHER_SNOW_ANY)) {
+            || (ctx->field_condition & WEATHER_SNOW_PERMANENT)) {
                 butItFailedFlag = TRUE;
             }
             if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) || (ctx->field_condition & WEATHER_HEAVY_RAIN) || (ctx->field_condition & WEATHER_STRONG_WINDS)) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_USE_WEATHER_MOVE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3611,6 +3875,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
                 butItFailedFlag = TRUE;
             }
             if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) || (ctx->field_condition & WEATHER_HEAVY_RAIN) || (ctx->field_condition & WEATHER_STRONG_WINDS)) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_USE_WEATHER_MOVE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3629,6 +3894,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
                 butItFailedFlag = TRUE;
             }
             if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) || (ctx->field_condition & WEATHER_HEAVY_RAIN) || (ctx->field_condition & WEATHER_STRONG_WINDS)) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_USE_WEATHER_MOVE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3652,6 +3918,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
                 butItFailedFlag = TRUE;
             }
             if ((ctx->field_condition & WEATHER_EXTREMELY_HARSH_SUNLIGHT) || (ctx->field_condition & WEATHER_HEAVY_RAIN) || (ctx->field_condition & WEATHER_STRONG_WINDS)) {
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_USE_WEATHER_MOVE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
                 ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -3794,8 +4061,7 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
     // TODO: For Redundancy failures, we just do it in the effect script /subscript
 
     if (butItFailedFlag) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
         ctx->battlerIdTemp = ctx->defence_client;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
@@ -3812,7 +4078,8 @@ BOOL BattleController_CheckMoveFailures4_SingleTarget(struct BattleSystem *bsys 
 // Edit: should be done? Need to double check
 BOOL BattleController_CheckMoveFailures4_MultipleTargets(struct BattleSystem *bsys UNUSED, struct BattleStruct *ctx, int defender) {
     switch (ctx->current_move_index) {
-        case MOVE_LIFE_DEW: {
+        // temporarily handled in the life dew subscript because otherwise it doesn't fallthrough on the ally
+        /* case MOVE_LIFE_DEW: {
             if (ctx->battlemon[defender].hp == (s32)ctx->battlemon[defender].maxhp) {
                 ctx->battlerIdTemp = defender;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_HEAL_TARGET_HP_FULL_FAIL);
@@ -3822,7 +4089,7 @@ BOOL BattleController_CheckMoveFailures4_MultipleTargets(struct BattleSystem *bs
                 return TRUE;
             }
             break;
-        }
+        } */
         case MOVE_CORROSIVE_GAS: {
             if (ctx->battlemon[defender].item == ITEM_NONE
 #if CORROSIVE_GAS_IMPLIED_BEHAVIOUR == TRUE
@@ -3838,6 +4105,7 @@ BOOL BattleController_CheckMoveFailures4_MultipleTargets(struct BattleSystem *bs
             || (ctx->battlemon[defender].species == SPECIES_ZAMAZENTA && ctx->battlemon[defender].item == ITEM_RUSTED_SHIELD)
             || (ctx->battlemon[defender].species == SPECIES_OGERPON && IS_ITEM_MASK(ctx->battlemon[defender].item))) {
                 ctx->battlerIdTemp = defender;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_FAILED_TO_AFFECT);
                 ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
                 ctx->next_server_seq_no = ctx->server_seq_no;
@@ -3857,7 +4125,10 @@ BOOL BattleController_CheckMoveFailures5(struct BattleSystem *bsys UNUSED, struc
 
     int moveEffect = ctx->moveTbl[ctx->current_move_index].effect;
 
-    int attackerCondition = ctx->battlemon[ctx->attack_client].condition;
+    int attackerCondition = 0;
+    if (IsAttackerOnField(ctx)) {
+        attackerCondition = ctx->battlemon[ctx->attack_client].condition;
+    }
 
     switch (moveEffect) {
         // Psycho Shift
@@ -3869,8 +4140,7 @@ BOOL BattleController_CheckMoveFailures5(struct BattleSystem *bsys UNUSED, struc
                 // Poison / Steel-type poison / badly poison immunity
                 || (attackerCondition & STATUS_POISON_ALL && (HasType(ctx, defender, TYPE_POISON) || HasType(ctx, defender, TYPE_STEEL)))) {
                 ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_NOT_EFFECTIVE;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 ctx->battlerIdTemp = defender;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
@@ -3884,8 +4154,7 @@ BOOL BattleController_CheckMoveFailures5(struct BattleSystem *bsys UNUSED, struc
         // Substitute
         case MOVE_EFFECT_SET_SUBSTITUTE: {
             if (ctx->battlemon[ctx->attack_client].hp <= BattleDamageDivide(ctx->battlemon[ctx->attack_client].maxhp, 4)) {
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-                ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+                BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, FALSE);
                 ctx->battlerIdTemp = defender;
                 LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_SUBSTITUTE_FAIL);
                 ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
@@ -3945,10 +4214,10 @@ BOOL BattleController_CheckMoveFailures3(struct BattleSystem *bsys UNUSED, struc
     || (moveEffect == MOVE_EFFECT_STATUS_SLEEP_NEXT_TURN && (ctx->battlemon[defender].effect_of_moves & MOVE_EFFECT_YAWN_COUNTER || ctx->battlemon[defender].condition))
     // Worry Seed when target has Insomnia / Truant
     || (moveEffect == MOVE_EFFECT_SET_ABILITY_TO_INSOMNIA && (GetBattlerAbility(ctx, ctx->defence_client) == ABILITY_INSOMNIA || GetBattlerAbility(ctx, ctx->defence_client) == ABILITY_TRUANT))
-    // TODO: Coaching in singles or when there is no ally target available in doubles
+    // Coaching in singles or when there is no ally target available in doubles
+    || ((moveEffect == MOVE_EFFECT_COACHING) && (!(BattleTypeGet(bsys) & BATTLE_TYPE_DOUBLE) || (ctx->battlemon[BATTLER_ALLY(ctx->attack_client)].hp == 0)))
     ) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
@@ -3962,8 +4231,7 @@ BOOL BattleController_CheckMoveFailures3(struct BattleSystem *bsys UNUSED, struc
     if ((moveEffect == MOVE_EFFECT_RECOVER_DAMAGE_SLEEP && !((ctx->battlemon[defender].condition & STATUS_SLEEP) || GetBattlerAbility(ctx, defender)))
     // Endeavor when target has equal or less HP than the user
     || (moveEffect == MOVE_EFFECT_SET_HP_EQUAL_TO_USER && ctx->battlemon[ctx->attack_client].hp >= ctx->battlemon[defender].hp)) {
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_NOT_EFFECTIVE;
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_DOESNT_AFFECT);
@@ -3976,8 +4244,7 @@ BOOL BattleController_CheckMoveFailures3(struct BattleSystem *bsys UNUSED, struc
     // OHKO moves against a target with higher level than the user / target is Dynamaxed
     if (moveEffect == MOVE_EFFECT_ONE_HIT_KO && (ctx->battlemon[ctx->attack_client].level < ctx->battlemon[defender].level || ctx->battlemon[defender].is_currently_dynamaxed)) {
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_OHKO_HIT_NOHIT;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_UNAFFECTED);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -3993,8 +4260,7 @@ BOOL BattleController_CheckMoveFailures3(struct BattleSystem *bsys UNUSED, struc
     || ((moveEffect == MOVE_EFFECT_STATUS_POISON || moveEffect == MOVE_EFFECT_STATUS_BADLY_POISON) && ctx->battlemon[defender].condition & STATUS_POISON_ALL)
     || (moveEffect == MOVE_EFFECT_STATUS_BURN && ctx->battlemon[defender].condition & STATUS_BURN)) {
         ctx->moveStatusFlagForSpreadMoves[defender] = MOVE_STATUS_FLAG_FAILED;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_flag = 0;
-        ctx->oneTurnFlag[ctx->attack_client].parental_bond_is_active = FALSE;
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         ctx->battlerIdTemp = defender;
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_ALREADY_HAS_SAME_STATUS);
         ctx->next_server_seq_no = ctx->server_seq_no;
@@ -4010,6 +4276,7 @@ BOOL BattleController_CheckMoveFailures3(struct BattleSystem *bsys UNUSED, struc
 
 BOOL BattleController_CheckMoveFailures3_PerishSong(struct BattleSystem *bsys, struct BattleStruct *ctx) {
     if (IfAllClientsHavePerishSong(bsys, ctx) && ctx->current_move_index == MOVE_PERISH_SONG) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_BUT_IT_FAILED_SPREAD);
         ctx->next_server_seq_no = CONTROLLER_COMMAND_25;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -4029,6 +4296,7 @@ int BattleController_CheckMoveFailures3_StatsChanges(struct BattleSystem *bsys U
         case MOVE_EFFECT_ATK_UP:
         case MOVE_EFFECT_ATK_UP_2:
         case MOVE_EFFECT_ATK_UP_3:
+        // case MOVE_EFFECT_HOWL: needs a dedicated case checking both it & partner, temp handled in effect
         // case MOVE_EFFECT_ATK_UP_2_STATUS_CONFUSION: //handled below
             if (ctx->battlemon[defender].states[STAT_ATTACK] == 12) {
                 result = 1;
@@ -4080,7 +4348,13 @@ int BattleController_CheckMoveFailures3_StatsChanges(struct BattleSystem *bsys U
             }
             break;
         case MOVE_EFFECT_ATK_DEF_UP:
+        case MOVE_EFFECT_COACHING:
             if (ctx->battlemon[defender].states[STAT_ATTACK] == 12 && ctx->battlemon[defender].states[STAT_DEFENSE] == 12) {
+                result = 1;
+            }
+            break;
+        case MOVE_EFFECT_DECORATE:
+            if (ctx->battlemon[defender].states[STAT_ATTACK] == 12 && ctx->battlemon[defender].states[STAT_SPATK] == 12) {
                 result = 1;
             }
             break;
@@ -4214,8 +4488,24 @@ int BattleController_CheckMoveFailures3_StatsChanges(struct BattleSystem *bsys U
             && ctx->battlemon[defender].states[STAT_SPEED] == 0) {
                 result = 1;
             }
+            break;
+        case MOVE_EFFECT_PARTING_SHOT:
+            if (ctx->battlemon[defender].states[STAT_ATTACK] == 0
+                && ctx->battlemon[defender].states[STAT_SPATK] == 0) {
+                result = 1;
+            }
+            break;
+        case MOVE_EFFECT_STUFF_CHEEKS:
+            if (ctx->battlemon[ctx->attack_client].states[STAT_DEFENSE] == 12) {
+                result = 1;
+            }
+            break;
         default:
             break;
+    }
+
+    if (result == 1) {
+        BattleController_ResetGeneralMoveFailureFlags(ctx, ctx->attack_client, TRUE);
     }
 
     return result;
@@ -4231,13 +4521,12 @@ BOOL BattleController_CheckStrongWindsWeaken(struct BattleSystem *bw, struct Bat
     u32 move_type = GetAdjustedMoveType(sp, sp->attack_client, sp->current_move_index);
     int i = 0;
 
-    while (TypeEffectivenessTable[i][0] != 0xff) {
+    while (TypeEffectivenessTable[i][0] != BATTLER_NONE) {
         if (TypeEffectivenessTable[i][0] == move_type) {
             if (HasType(sp, defender, TypeEffectivenessTable[i][1])) {
-                if ((!CheckSideAbility(bw, sp, CHECK_ABILITY_ALL_HP, 0, ABILITY_CLOUD_NINE) && !CheckSideAbility(bw, sp, CHECK_ABILITY_ALL_HP, 0, ABILITY_AIR_LOCK)
-                && sp->field_condition & WEATHER_STRONG_WINDS
-                && (TypeEffectivenessTable[i][2] == 20)
-                && (HasType(sp, defender, TYPE_FLYING)))) {
+                if ((GetWeather(bw, sp, sp->attack_client) & WEATHER_STRONG_WINDS)
+                    && (TypeEffectivenessTable[i][2] == 20)
+                    && (HasType(sp, defender, TYPE_FLYING))) {
                     LoadBattleSubSeqScript(sp, ARC_BATTLE_SUB_SEQ, SUB_SEQ_WEAKEN_MOVES_STRONG_WINDS);
                     sp->next_server_seq_no = sp->server_seq_no;
                     sp->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
@@ -4263,6 +4552,8 @@ BOOL BattleController_TryConsumeDamageReductionBerry(struct BattleSystem *bsys U
         LoadBattleSubSeqScript(ctx, ARC_BATTLE_SUB_SEQ, SUB_SEQ_PLAY_EAT_BERRY_ANIMATION);
         ctx->next_server_seq_no = ctx->server_seq_no;
         ctx->server_seq_no = CONTROLLER_COMMAND_RUN_SCRIPT;
+        ctx->onceOnlyMoveConditionFlags[SanitizeClientForTeamAccess(bsys, defender)][ctx->sel_mons_no[defender]].berryEatenAndCanBelch = TRUE;
+
         return TRUE;
     }
     return FALSE;
@@ -4303,6 +4594,7 @@ BOOL LONG_CALL AbilityFailRolePlay(int ability) {
     case ABILITY_POWER_OF_ALCHEMY:
     case ABILITY_RKS_SYSTEM:
     case ABILITY_ICE_FACE:
+    case ABILITY_GULP_MISSILE:
     case ABILITY_NEUTRALIZING_GAS:
     case ABILITY_HUNGER_SWITCH:
     case ABILITY_AS_ONE_GLASTRIER:
@@ -4546,4 +4838,22 @@ BOOL LONG_CALL AbilityCantSupress(int ability) {
         break;
     }
     return FALSE;
+}
+
+void BattleController_ResetGeneralMoveFailureFlags(struct BattleStruct *ctx, int attack_client, BOOL setsMoveConditionalFailureFlag) {
+    if (IsAttackerOnField(ctx)) {
+        ctx->oneTurnFlag[attack_client].parental_bond_flag = 0;
+        ctx->oneTurnFlag[attack_client].parental_bond_is_active = FALSE;
+
+        ctx->battlemon[attack_client].condition2 &= ~STATUS2_LOCKED_INTO_MOVE;
+        ctx->battlemon[attack_client].condition2 &= ~STATUS2_BIDE;
+        ctx->battlemon[attack_client].effect_of_moves &= ~(MOVE_EFFECT_FLAG_SEMI_INVULNERABLE);
+        ctx->battlemon[attack_client].moveeffect.rolloutCount = 0;
+        ctx->battlemon[attack_client].moveeffect.furyCutterCount = 0;
+
+        if (setsMoveConditionalFailureFlag) {
+            ctx->moveConditionsFlags[attack_client].moveFailureThisTurn = TRUE;
+        }
+    }
+    //TODO: end bide, bide no target, Telekinesis
 }

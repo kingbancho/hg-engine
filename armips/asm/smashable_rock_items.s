@@ -25,10 +25,10 @@
 .halfword ITEM_OLD_AMBER
 .halfword ITEM_JAW_FOSSIL
 .halfword ITEM_SAIL_FOSSIL
-.halfword ITEM_BIRD_FOSSIL
-.halfword ITEM_DRAKE_FOSSIL
-.halfword ITEM_FISH_FOSSIL
-.halfword ITEM_DINO_FOSSIL
+.halfword ITEM_OLD_AMBER
+.halfword ITEM_OLD_AMBER
+.halfword ITEM_OLD_AMBER
+.halfword ITEM_OLD_AMBER
 .halfword ITEM_RARE_BONE
 
 /* Any Other Area Table - Edited to remove Heart Scale */

@@ -10,13 +10,13 @@ _0000: // Trainer 0
        // Trainer 2
        // Trainer 3
        // Trainer 11 - Hiker Steve, Ruins of Alph
-       // Trainer 19
-       // Trainer 40
-       // Trainer 63
+       // Trainer 19 - Bug Catcher Wayne, Ilex Forest
+       // Trainer 40 - Aroma Lady Violet, Ilex Forest
+       // Trainer 63 - Poke Ball Crafter Kurt, after Slowpoke Well
        // Trainer 87 - Pokemon Trainer Ethan, Route 31
        // Trainer 88 - Pokemon Trainer Kris, Route 31
-       // Trainer 105
-       // Trainer 106
+       // Trainer 105 - Team Rocket Grunt M, Slowpoke Well
+       // Trainer 106 - Team Rocket Grunt F, Slowpoke Well (double battle)
        // Trainer 107
        // Trainer 138
        // Trainer 141
@@ -1945,7 +1945,7 @@ _1188: // Trainer 390
 _1194: // Trainer 23
     trainertextentry  23, TEXT_NOTICE_IN_OVERWORLD, "I roam far and wide in search of\nPokémon.\rAre you looking for Pokémon, too?\nThen you’re my collecting rival!\r"
     trainertextentry  23, TEXT_DEFEATED_IN_BATTLE, "Ugh. My poor Pokémon...\n"
-    trainertextentry  23, TEXT_DEFEATED_IN_OVERWORLD, "If you listen closely, you can hear Pokémon\nroars from deep inside the cave.\fIt’s almost as if a Pokémon’s singing...\n"
+    trainertextentry  23, TEXT_DEFEATED_IN_OVERWORLD, "If you listen closely, you can hear\nroars from deep inside the cave.\fIt’s almost as if a Pokémon’s singing...\n"
 
 _11A0: // Trainer 25
     trainertextentry  25, TEXT_NOTICE_IN_OVERWORLD, "You’re headed to Azalea, are you?\nLet my Pokémon see if you are good\fenough to battle.\r"
@@ -3109,6 +3109,31 @@ _1AEC: // Trainer 88
     trainertextentry  88, TEXT_DEFEATED_IN_BATTLE, "Wow! You are so strong!\n"
     trainertextentry  88, TEXT_PLAYER_LOSES, "Wow! I won!\n"
 
+_1AF8: // Trainer 19
+    trainertextentry  19, TEXT_NOTICE_IN_OVERWORLD, "Don’t sneak up on me like that!\nYou frightened a Pokémon away!\r"
+    trainertextentry  19, TEXT_DEFEATED_IN_BATTLE, "I hadn’t seen that Pokémon before...\n"
+    trainertextentry  19, TEXT_DEFEATED_IN_OVERWORLD, "A Pokémon I’ve never seen before fell\nout of the tree when I used Headbutt.\rI ought to use Headbutt in other\nplaces too.\n"
+
+_1B04: // Trainer 40
+    trainertextentry  40, TEXT_NOTICE_IN_OVERWORLD, "I collect the prettiest scents in\nIlex Forest...\fand now I found you!\r"
+    trainertextentry  40, TEXT_DEFEATED_IN_BATTLE, "Oh no! That was not the fragrance\nI was going for!\n"
+    trainertextentry  40, TEXT_DEFEATED_IN_OVERWORLD, "The scent of old leaves and shrine\nwood...\rThey say this forest remembers\neverything.\n"
+
+_1B10: // Trainer 105
+    trainertextentry 105, TEXT_NOTICE_IN_OVERWORLD, "This can’t be right...\rI’ve got orders to keep everyone out\nof Slowpoke Well!\fStop right there!\r"
+    trainertextentry 105, TEXT_DEFEATED_IN_BATTLE, "Darn it...\n"
+    trainertextentry 105, TEXT_DEFEATED_IN_OVERWORLD, "An intruder has entered Slowpoke Well,\nover!\rI repeat...\n"
+
+_1B1C: // Trainer 106
+    trainertextentry 106, TEXT_NOTICE_IN_OVERWORLD, "Who do you think you are?\rStop immediately!\r"
+    trainertextentry 106, TEXT_DEFEATED_IN_BATTLE, "I’ve told you to stop...\n"
+    trainertextentry 106, TEXT_DEFEATED_IN_OVERWORLD, "I’m not even sure myself what brings\nTeam Rocket to Slowpoke Well...\n"
+
+_1B28: // Trainer 63
+    trainertextentry  63, TEXT_NOTICE_IN_OVERWORLD, "...!\r"
+    trainertextentry  63, TEXT_DEFEATED_IN_BATTLE, "I see... You have incredible power!\n"
+    trainertextentry  63, TEXT_DEFEATED_IN_OVERWORLD, "...\n"
+
 .close
 
 
@@ -3134,7 +3159,7 @@ _1AEC: // Trainer 88
 /* Trainer  16 */ .halfword _0C74
 /* Trainer  17 */ .halfword _0E08
 /* Trainer  18 */ .halfword _0A64
-/* Trainer  19 */ .halfword _0000
+/* Trainer  19 */ .halfword _1AF8
 /* Trainer  20 */ .halfword _014C
 /* Trainer  21 */ .halfword _0158
 /* Trainer  22 */ .halfword _0268
@@ -3155,7 +3180,7 @@ _1AEC: // Trainer 88
 /* Trainer  37 */ .halfword _1254
 /* Trainer  38 */ .halfword _0830
 /* Trainer  39 */ .halfword _0C68
-/* Trainer  40 */ .halfword _0000
+/* Trainer  40 */ .halfword _1B04
 /* Trainer  41 */ .halfword _0FB4
 /* Trainer  42 */ .halfword _1170
 /* Trainer  43 */ .halfword _1008
@@ -3178,7 +3203,7 @@ _1AEC: // Trainer 88
 /* Trainer  60 */ .halfword _0A80
 /* Trainer  61 */ .halfword _0AB4
 /* Trainer  62 */ .halfword _0B20
-/* Trainer  63 */ .halfword _0000
+/* Trainer  63 */ .halfword _1B28
 /* Trainer  64 */ .halfword _0B2C
 /* Trainer  65 */ .halfword _0B04
 /* Trainer  66 */ .halfword _0AC4
@@ -3220,8 +3245,8 @@ _1AEC: // Trainer 88
 /* Trainer 102 */ .halfword _0980
 /* Trainer 103 */ .halfword _09D4
 /* Trainer 104 */ .halfword _09E0
-/* Trainer 105 */ .halfword _0000
-/* Trainer 106 */ .halfword _0000
+/* Trainer 105 */ .halfword _1B10
+/* Trainer 106 */ .halfword _1B1C
 /* Trainer 107 */ .halfword _0000
 /* Trainer 108 */ .halfword _0DFC
 /* Trainer 109 */ .halfword _0E8C

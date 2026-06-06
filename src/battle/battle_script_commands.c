@@ -1361,6 +1361,8 @@ u8 ALIGN4 scratchpad[4] = {0, 0, 0, 0};
  *  @param arg0 task structure
  *  @param work exp calculator structure
  */
+static u32 sOriginalExpMask[2];
+
 void Task_DistributeExp_Extend(void *arg0, void *work)
 {
     int sel_mons_no = 0;
@@ -1373,6 +1375,33 @@ void Task_DistributeExp_Extend(void *arg0, void *work)
     struct BattleStruct *sp = expcalc->sp;
 
     client_no = (sp->fainting_client >> 1) & 1;
+    exp_client_no = client_no;
+
+    if (expcalc->seq_no == 0)
+    {
+        u32 partyCount = BattleWorkPokeCountGet(expcalc->bw, exp_client_no);
+        u32 originalMask = sp->obtained_exp_right_flag[client_no];
+        u32 eligibleMask = 0;
+
+        // Build eligibility mask: every valid, non-egg, non-fainted mon gets exp processing
+        for (u32 i = 0; i < partyCount; i++)
+        {
+            struct PartyPokemon *p = BattleWorkPokemonParamGet(expcalc->bw, exp_client_no, i);
+            if (!p) continue;
+
+            if (!GetMonData(p, MON_DATA_SPECIES, NULL)) continue;
+            if (GetMonData(p, MON_DATA_IS_EGG, NULL)) continue;
+            if (!GetMonData(p, MON_DATA_HP, NULL)) continue;
+
+            eligibleMask |= No2Bit(i);
+        }
+
+        // Store original participation flags in work[7] (u32)
+        sOriginalExpMask[client_no] = originalMask;
+
+        // Expand: now Task_DistributeExp will iterate everyone eligible
+        sp->obtained_exp_right_flag[client_no] = eligibleMask;
+    }
 
     if (expcalc->seq_no < 37)
     {
@@ -1382,47 +1411,24 @@ void Task_DistributeExp_Extend(void *arg0, void *work)
             pp = BattleWorkPokemonParamGet(expcalc->bw, exp_client_no, sel_mons_no);
             if (pp == NULL)
                 goto _skipAllThis;
-            item = GetMonData(pp, MON_DATA_HELD_ITEM, NULL);
-            eqp = GetItemData(item, ITEM_PARAM_HOLD_EFFECT, 5);
 
-            if ((eqp == HOLD_EFFECT_EXP_SHARE) || (sp->obtained_exp_right_flag[client_no] & No2Bit(sel_mons_no)))
-            {
-                break;
-            }
+            // skip empty slots / eggs / fainted mons
+            if (!GetMonData(pp, MON_DATA_SPECIES, NULL))
+                continue;
+            if (GetMonData(pp, MON_DATA_IS_EGG, NULL))
+                continue;
+            if (!GetMonData(pp, MON_DATA_HP, NULL))
+                continue;
+
+            // found the next mon that should receive EXP this step
+            break;
         }
     }
 
 #if EXPERIENCE_FORMULA_GEN == 5 || EXPERIENCE_FORMULA_GEN > 6 // scaled exp rate
-    struct Party *party = BattleWorkPokePartyGet(expcalc->bw, 0);
     //u32 mons_getting_exp_from_item = 0;
     //u32 mons_getting_exp = 0;
     u32 totalexp = 0;
-
-    // count how many pokémon are getting experience
-    if (!expcalc->work[6])
-    {
-        monCount = 0;
-        monCountFromItem = 0;
-        for (int i = 0; i < party->count; i++)
-        {
-            struct PartyPokemon *pploop = BattleWorkPokemonParamGet(expcalc->bw, exp_client_no, i);
-            if ((GetMonData(pploop, MON_DATA_SPECIES, NULL)) && (GetMonData(pploop, MON_DATA_HP, NULL)))
-            {
-                if (sp->obtained_exp_right_flag[client_no /*(sp->fainting_client >> 1) & 1*/] & No2Bit(i))
-                {
-                    monCount++;
-                }
-
-                item = GetMonData(pploop, MON_DATA_HELD_ITEM, NULL);
-                eqp = BattleItemDataGet(sp, item, 1);
-
-                if (eqp == HOLD_EFFECT_EXP_SHARE)
-                {
-                    monCountFromItem++;
-                }
-            }
-        }
-    }
 
     if (expcalc->seq_no < 37) // either this or switch to below.  this prevents NULL access though (ideally)
     {
@@ -1457,30 +1463,27 @@ void Task_DistributeExp_Extend(void *arg0, void *work)
                 totalexp /= bottom;
             }
 
-            //debug_printf("[Task_DistributeExp_Extend] L = %d, Lp = %d, b = %d, top = %d, bottom = %d, exp = %d\n", level, Lp, base, top, bottom, totalexp);
+            // --- SV-style Exp All distribution ---
+            // participated? then 100%; otherwise about 50%
+            u32 bit = No2Bit(sel_mons_no);
+            u32 participated = 0;
+            if (sOriginalExpMask[client_no] & bit)
+              participated = 1;
 
-            if (monCountFromItem)
-            {
-                sp->obtained_exp = (totalexp / 2) / monCount;
-                if (sp->obtained_exp == 0)
-                {
-                    sp->obtained_exp = 1;
-                }
-                sp->exp_share_obtained_exp = (totalexp / 2) / monCountFromItem;
-                if (sp->exp_share_obtained_exp == 0)
-                {
-                    sp->exp_share_obtained_exp = 1;
-                }
-            }
-            else
-            {
-                sp->obtained_exp = totalexp / monCount;
-                if (sp->obtained_exp == 0)
-                {
-                    sp->obtained_exp = 1;
-                }
-                sp->exp_share_obtained_exp = 0;
-            }
+            u32 gained = totalexp;
+            if (!participated)
+                gained = gained / 2;
+
+            // Never drop tiny chunks completely
+            if (gained == 0 && totalexp > 0)
+              gained = 1;
+
+            // This is the EXP that will be applied to THIS mon later in the task sequence
+            sp->obtained_exp = gained;
+
+            sp->exp_share_obtained_exp = 0;
+
+            //debug_printf("[Task_DistributeExp_Extend] L = %d, Lp = %d, b = %d, top = %d, bottom = %d, exp = %d\n", level, Lp, base, top, bottom, totalexp);
         }
     }
 
@@ -1569,9 +1572,21 @@ void Task_DistributeExp_Extend(void *arg0, void *work)
                                sp->battlemon[sp->fainting_client].form_no);
     }
 
+
+
 _skipAllThis:
+    u32 restoreMask = 0;
+    if (expcalc->seq_no == 37)
+        restoreMask = 1;
+
     Task_DistributeExp(arg0, work);
+
+    if (restoreMask)
+        sp->obtained_exp_right_flag[client_no] = expcalc->work[7];
+
 }
+
+
 
 
 

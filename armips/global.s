@@ -25,8 +25,8 @@
 .include "armips/asm/hidden_items.s" // allows editing of hidden items for Dowsing Machine
 .include "armips/asm/encounter_rates.s" // adjusts the encounter rates of the wild Pokemon table
 .include "armips/asm/dashes_for_power_2.s" // shows dashes instead of power 1 for moves such as Low Kick
-.include "armips/asm/remove_obedience_checks.s" // does not require badges for higher leveled mons to obey
-
+.include "armips/asm/remove_obedience_check.s" // does not require badges for higher leveled mons to obey
+.include "armips/asm/smashable_rock_items.s" // can be removed with newest version of hge as rock smash is exposed there
 
 .include "armips/asm/no_partner_double_battles.s" // allows no partner double battles
 

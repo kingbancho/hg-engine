@@ -22,9 +22,18 @@ const struct BadgeMartItems sBadgeMart[] = {
     { ITEM_POKE_BALL,      0 },
     { ITEM_GREAT_BALL,     3 },
     { ITEM_ULTRA_BALL,     5 },
+    { ITEM_HEAL_BALL,      1 },
+    { ITEM_NET_BALL,       2 },
+    { ITEM_REPEAT_BALL,    3 },
+    { ITEM_NEST_BALL,      3 },
+    { ITEM_LUXURY_BALL,    4 },
+    { ITEM_DIVE_BALL,      5 },
+    { ITEM_QUICK_BALL,     6 },
+    { ITEM_DUSK_BALL,      7 },
+    { ITEM_TIMER_BALL,     8 },
     { ITEM_POTION,         0 },
     { ITEM_SUPER_POTION,   1 },
-    { ITEM_HYPER_POTION,   5 },
+    { ITEM_HYPER_POTION,   4 },
     { ITEM_MAX_POTION,     7 },
     { ITEM_FULL_RESTORE,   8 },
     { ITEM_REVIVE,         3 },
@@ -38,6 +47,7 @@ const struct BadgeMartItems sBadgeMart[] = {
     { ITEM_REPEL,          1 },
     { ITEM_SUPER_REPEL,    3 },
     { ITEM_MAX_REPEL,      5 },
+    { ITEM_POKE_DOLL,      0 },
 };
 
 void LONG_CALL InitMartUI(void *taskManager, FieldSystem *fieldSystem, const u16 *items, int kind, int buySell, int decoWhich, const struct MartItem *priceOverrides);

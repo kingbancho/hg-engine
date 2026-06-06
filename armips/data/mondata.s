@@ -1583,7 +1583,7 @@ mondata SPECIES_GEODUDE, "Geodude"
     abilities ABILITY_ROCK_HEAD, ABILITY_STURDY
     runchance 0
     colorflip BODY_COLOR_BROWN, 0
-    mondexentry SPECIES_GEODUDE, "Most people may not notice,\nbut a closer look should reveal that\nthere are many GEODUDE around."
+    mondexentry SPECIES_GEODUDE, "Most people may not notice,\nbut a closer look should reveal that\nthere are many Geodude around."
     mondexclassification SPECIES_GEODUDE, "Rock Pokémon"
     mondexheight SPECIES_GEODUDE, "1’04”"
     mondexweight SPECIES_GEODUDE, "44.1 lbs."
@@ -7232,7 +7232,7 @@ mondata SPECIES_BALTOY, "Baltoy"
     abilities ABILITY_LEVITATE, ABILITY_NONE
     runchance 0
     colorflip BODY_COLOR_BROWN, 0
-    mondexentry SPECIES_BALTOY, "It moves while spinning around on\nits single foot. Some BALTOY have\nbeen seen spinning on their heads."
+    mondexentry SPECIES_BALTOY, "It moves while spinning around on\nits single foot. Some Baltoy have\nbeen seen spinning on their heads."
     mondexclassification SPECIES_BALTOY, "Clay Doll Pokémon"
     mondexheight SPECIES_BALTOY, "1’08”"
     mondexweight SPECIES_BALTOY, "47.4 lbs."
@@ -9773,7 +9773,7 @@ mondata SPECIES_RHYPERIOR, "Rhyperior"
     abilities ABILITY_LIGHTNING_ROD, ABILITY_SOLID_ROCK
     runchance 0
     colorflip BODY_COLOR_GRAY, 0
-    mondexentry SPECIES_RHYPERIOR, "From holes in its palms, it fires out\nGEODUDE. Its carapace \ncan withstand volcanic eruptions."
+    mondexentry SPECIES_RHYPERIOR, "From holes in its palms, it fires out\nGeodude. Its carapace \ncan withstand volcanic eruptions."
     mondexclassification SPECIES_RHYPERIOR, "Drill Pokémon"
     mondexheight SPECIES_RHYPERIOR, "7’10”"
     mondexweight SPECIES_RHYPERIOR, "623.5 lbs."

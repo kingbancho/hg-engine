@@ -136,7 +136,7 @@ static const u16 sMachineMoves[] = {
     MOVE_SUBSTITUTE,       // TM103
     MOVE_IRON_DEFENSE,     // TM104
     MOVE_X_SCISSOR,        // TM105
-    MOVE_DRILL_RUN,        // TM106
+    MOVE_MUD_SLAP,         // TM106
     MOVE_WILL_O_WISP,      // TM107
     MOVE_CRUNCH,           // TM108
     MOVE_TRICK,            // TM109

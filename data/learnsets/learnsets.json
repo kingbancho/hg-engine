@@ -150257,32 +150257,52 @@
         "Move": "MOVE_TACKLE"
       },
       {
-        "Level": 5,
-        "Move": "MOVE_EMBER"
+        "Level": 1,
+        "Move": "MOVE_GROWL"
       },
       {
-        "Level": 9,
-        "Move": "MOVE_DOUBLE_HIT"
+        "Level": 5,
+        "Move": "MOVE_TAIL_WHIP"
+      },
+      {
+        "Level": 10,
+        "Move": "MOVE_CONFUSION"
       },
       {
         "Level": 15,
-        "Move": "MOVE_FLAME_WHEEL"
+        "Move": "MOVE_FAIRY_WIND"
       },
       {
-        "Level": 21,
-        "Move": "MOVE_HYPNOSIS"
+        "Level": 20,
+        "Move": "MOVE_AGILITY"
       },
       {
-        "Level": 29,
-        "Move": "MOVE_FIRE_BLAST"
+        "Level": 25,
+        "Move": "MOVE_PSYBEAM"
       },
       {
-        "Level": 37,
-        "Move": "MOVE_DOUBLE_EDGE"
+        "Level": 30,
+        "Move": "MOVE_STOMP"
       },
       {
-        "Level": 47,
-        "Move": "MOVE_FLARE_BLITZ"
+        "Level": 35,
+        "Move": "MOVE_HEAL_PULSE"
+      },
+      {
+        "Level": 41,
+        "Move": "MOVE_TAKE_DOWN"
+      },
+      {
+        "Level": 45,
+        "Move": "MOVE_DAZZLING_GLEAM"
+      },
+      {
+        "Level": 50,
+        "Move": "MOVE_PSYCHIC"
+      },
+      {
+        "Level": 55,
+        "Move": "MOVE_HEALING_WISH"
       }
     ],
     "MachineMoves": [
@@ -150338,35 +150358,67 @@
     "LevelMoves": [
       {
         "Level": 1,
+        "Move": "MOVE_PSYCHO_CUT"
+      },
+      {
+        "Level": 1,
+        "Move": "MOVE_MEGAHORN"
+      },
+      {
+        "Level": 1,
         "Move": "MOVE_TACKLE"
       },
       {
-        "Level": 5,
-        "Move": "MOVE_EMBER"
+        "Level": 1,
+        "Move": "MOVE_QUICK_ATTACK"
       },
       {
-        "Level": 9,
-        "Move": "MOVE_DOUBLE_HIT"
+        "Level": 1,
+        "Move": "MOVE_GROWL"
+      },
+      {
+        "Level": 1,
+        "Move": "MOVE_TAIL_WHIP"
+      },
+      {
+        "Level": 1,
+        "Move": "MOVE_CONFUSION"
       },
       {
         "Level": 15,
-        "Move": "MOVE_FLAME_WHEEL"
+        "Move": "MOVE_FAIRY_WIND"
       },
       {
-        "Level": 21,
-        "Move": "MOVE_HYPNOSIS"
+        "Level": 20,
+        "Move": "MOVE_AGILITY"
       },
       {
-        "Level": 29,
-        "Move": "MOVE_FIRE_BLAST"
+        "Level": 25,
+        "Move": "MOVE_PSYBEAM"
       },
       {
-        "Level": 37,
-        "Move": "MOVE_DOUBLE_EDGE"
+        "Level": 30,
+        "Move": "MOVE_STOMP"
       },
       {
-        "Level": 47,
-        "Move": "MOVE_FLARE_BLITZ"
+        "Level": 35,
+        "Move": "MOVE_HEAL_PULSE"
+      },
+      {
+        "Level": 43,
+        "Move": "MOVE_TAKE_DOWN"
+      },
+      {
+        "Level": 49,
+        "Move": "MOVE_DAZZLING_GLEAM"
+      },
+      {
+        "Level": 56,
+        "Move": "MOVE_PSYCHIC"
+      },
+      {
+        "Level": 63,
+        "Move": "MOVE_HEALING_WISH"
       }
     ],
     "MachineMoves": [

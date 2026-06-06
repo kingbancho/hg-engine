@@ -648,7 +648,7 @@
     "LevelMoves": [
       {
         "Level": 0,
-        "Move": "MOVE_GIGA_DRAIN"
+        "Move": "MOVE_MEGA_DRAIN"
       },
       {
         "Level": 1,
@@ -684,34 +684,42 @@
       },
       {
         "Level": 22,
-        "Move": "MOVE_BODY_SLAM"
+        "Move": "MOVE_MAGICAL_LEAF"
       },
       {
         "Level": 25,
-        "Move": "MOVE_MAGICAL_LEAF"
+        "Move": "MOVE_BODY_SLAM"
       },
       {
         "Level": 28,
         "Move": "MOVE_REFLECT"
       },
       {
+        "Level": 31,
+        "Move": "MOVE_GIGA_DRAIN"
+      },
+      {
         "Level": 36,
         "Move": "MOVE_SAFEGUARD"
       },
       {
-        "Level": 40,
+        "Level": 39,
         "Move": "MOVE_SYNTHESIS"
       },
       {
-        "Level": 45,
+        "Level": 42,
         "Move": "MOVE_SOLAR_BEAM"
       },
       {
-        "Level": 50,
+        "Level": 45,
         "Move": "MOVE_LIGHT_SCREEN"
       },
       {
-        "Level": 56,
+        "Level": 48,
+        "Move": "MOVE_PETAL_DANCE"
+      },
+      {
+        "Level": 51,
         "Move": "MOVE_LEAF_STORM"
       }
     ],
@@ -821,7 +829,7 @@
     "LevelMoves": [
       {
         "Level": 0,
-        "Move": "MOVE_PETAL_DANCE"
+        "Move": "MOVE_LEAF_BLADE"
       },
       {
         "Level": 1,
@@ -865,15 +873,19 @@
       },
       {
         "Level": 22,
-        "Move": "MOVE_BODY_SLAM"
+        "Move": "MOVE_MAGICAL_LEAF"
       },
       {
         "Level": 25,
-        "Move": "MOVE_MAGICAL_LEAF"
+        "Move": "MOVE_BODY_SLAM"
       },
       {
         "Level": 28,
         "Move": "MOVE_REFLECT"
+      },
+      {
+        "Level": 31,
+        "Move": "MOVE_GIGA_DRAIN"
       },
       {
         "Level": 36,
@@ -884,12 +896,16 @@
         "Move": "MOVE_SYNTHESIS"
       },
       {
-        "Level": 45,
+        "Level": 43,
         "Move": "MOVE_SOLAR_BEAM"
       },
       {
-        "Level": 50,
+        "Level": 46,
         "Move": "MOVE_LIGHT_SCREEN"
+      },
+      {
+        "Level": 50,
+        "Move": "MOVE_PETAL_DANCE"
       },
       {
         "Level": 56,

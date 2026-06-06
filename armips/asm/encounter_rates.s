@@ -14,88 +14,88 @@
 
 .org 0x022476A0
 
-// 19%
-.byte 19
+// 17%
+.byte 17
 .skip 9
 
-// 19%
-.byte 38
+// 17%
+.byte 34
 .skip 7
-.byte 38
+.byte 34
 .skip 3
 
-// 16%
-.byte 54
+// 15%
+.byte 49
 .skip 7
-.byte 54
+.byte 49
 .skip 3
 
-// 16%
-.byte 70
+// 14%
+.byte 64
 .skip 7
-.byte 70
+.byte 64
 .skip 3
 
 // 8%
-.byte 78
+.byte 72
 .skip 7
-.byte 78
+.byte 72
 .skip 3
 
-// 5%
-.byte 83
+// 6%
+.byte 78
 .skip 7
-.byte 83
+.byte 78
 .skip 3
 
 //
 
-// 3%
+// 4%
+.byte 82
+.skip 7
+.byte 82
+.skip 3
+
+// 4%
 .byte 86
 .skip 7
 .byte 86
 .skip 3
 
-// 3%
-.byte 89
+// 4%
+.byte 90
 .skip 7
-.byte 89
+.byte 90
 .skip 3
 
-// 3%
-.byte 92
-.skip 7
-.byte 92
-.skip 3
-
-// 3%
-.byte 95
+// 4%
+.byte 94
 .skip 7
 
-// 3%
+// 4%
 // then values 95 - 99 activate last slot
-.byte 98
+.byte 97
 
 // Changes instruction from i == 98 to i >= 98
 //.skip 2
 //.byte 0xD2
 
 // Surfing Encounters
-// Change rates to 40/20/20/10/10
+// Change rates to 27/27/26/10/10
 
 .org 0x02247734
 
-// 40%
-.byte 40
+// 27%
+.byte 27
 .skip 9
 
-// 20%
-.byte 60
+// 27%
+.byte 54
 .skip 7
-.byte 60
+.byte 54
 .skip 3
 
-// 20%
+// 26%
 .byte 80
 .skip 7
 .byte 80
@@ -106,19 +106,19 @@
 .byte 90
 
 // Fishing Encounters
-// Change rates to 40/20/20/10/10
+// Change rates to 27/27/26/10/10
 
 .org 0x02247778
 
-// 40%
-.byte 40
+// 27%
+.byte 27
 .skip 7
 
-// 20%
-.byte 60
+// 27%
+.byte 54
 .skip 7
 
-// 20%
+// 26%
 .byte 80
 .skip 7
 

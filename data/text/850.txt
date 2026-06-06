@@ -335,7 +335,7 @@ The user shoots filthy garbage at\nthe foe to attack. It may also\npoison the ta
 The user makes a copy of itself\nusing some of its HP. The copy\nserves as the user’s decoy.
 The user hardens its body’s surface\nlike iron, sharply raising its\nDefense stat.
 The user slashes at the foe by\ncrossing its scythes or claws as if\nthey were a pair of scissors.
-The user rotates its body like a\ndrill. It has a high critical-hit\nratio.
+The user hurls mud in the target’s\nface to inflict damage and lower\nits accuracy.
 The user shoots a sinister, bluish\nwhite flame at the foe to inflict a\nburn.
 The user crunches up the foe with\nsharp fangs. It may also lower the\ntarget’s Defense stat.
 The user catches the foe off guard\nand swaps the foe’s held item with\nits own.

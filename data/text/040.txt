@@ -32,7 +32,7 @@ Too bad!\nThe Bag is full...
 {STRVAR_1 3, 0, 0} put {STRVAR_1 8, 1, 0}\nin the {COLOR 2}{STRVAR_1 31, 2, 0}{COLOR 0} Pocket.
 {STRVAR_1 3, 0, 0} put away the\n{STRVAR_1 31, 1, 0} in the Fashion Case.
 {STRVAR_1 3, 0, 0} booted up the PC.\r
-Which PC should be accessed? {YESNO 0}
+Which functionality should be\naccessed? {YESNO 0}
 The Pokémon Storage System\nwas accessed.\r
 Accessed {STRVAR_1 3, 0, 0}’s PC.\r
 Oak’s words echoed...\n{STRVAR_1 3, 0, 0}! There’s a time and\fplace for everything! But not now.

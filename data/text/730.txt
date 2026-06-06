@@ -83,7 +83,7 @@ Waiter
 Medium
 Cameraman
 Reporter
-Idol
+Craftsman
 Champion
 Elite Four
 Elite Four

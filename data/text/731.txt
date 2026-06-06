@@ -83,7 +83,7 @@ a Waiter
 a Medium
 a Cameraman
 a Reporter
-an Idol
+a Craftsman
 a Champion
 an Elite Four
 an Elite Four

@@ -772,3 +772,6 @@ PrintItemSlotQuantity = 0x021FF66C | 1;
 
 PlayerProfile_TestBadgeFlag = 0x02028F98 | 1;
 InitMartUI = 0x02256D34 | 1;
+
+/* Starter IVs */
+Save_VarsFlags_SetStarter = 0x2066AE0 | 1;
